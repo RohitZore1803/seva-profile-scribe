@@ -132,14 +132,16 @@ export default function CredentialsPage() {
       localStorage.setItem('recentBookings', JSON.stringify(existingBookings.slice(0, 10)));
 
       toast({
-        title: "Booking Submitted Successfully",
+        title: "🎉 Booking Submitted Successfully!",
         description: (
-          <div className="text-left">
-            <div><b>Service:</b> {existingService.name}</div>
-            <div><b>From:</b> {format(data.fromDate, "PPP")}</div>
-            <div><b>To:</b> {format(data.toDate, "PPP")}</div>
-            <div><b>Location:</b> {data.location}</div>
-            <div><b>Address:</b> {data.address}</div>
+          <div className="text-left space-y-2">
+            <div><strong>Service:</strong> {existingService.name}</div>
+            <div><strong>From:</strong> {format(data.fromDate, "PPP")}</div>
+            <div><strong>To:</strong> {format(data.toDate, "PPP")}</div>
+            <div><strong>Location:</strong> {data.location}</div>
+            <div className="text-sm text-green-600 mt-2">
+              📧 Confirmation email sent to your registered email
+            </div>
           </div>
         ),
       });
@@ -162,7 +164,7 @@ export default function CredentialsPage() {
 
   if (sessionLoading) {
     return (
-      <div className="min-h-screen bg-[#f8ede8] flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading...</p>
@@ -176,11 +178,18 @@ export default function CredentialsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8ede8] flex flex-col items-center justify-start py-10 px-2">
-      <div className="bg-white max-w-xl w-full rounded-xl shadow p-8">
-        <h1 className="text-2xl font-extrabold mb-6 text-orange-700 text-center">
-          Select Dates &amp; Location
-        </h1>
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 flex flex-col items-center justify-start py-10 px-2">
+      <div className="bg-white/90 backdrop-blur-sm max-w-2xl w-full rounded-2xl shadow-2xl p-8 border-0">
+        <div className="text-center mb-8">
+          <div className="text-6xl mb-4">📿</div>
+          <h1 className="text-3xl font-extrabold mb-2 text-orange-700">
+            Complete Your Booking
+          </h1>
+          <p className="text-gray-600 text-lg">
+            Select dates and location for your pooja service
+          </p>
+        </div>
+        
         <ProfileSummary profile={profile} loading={loadingProfile} />
         <CredentialsForm onSubmit={handleSubmit} loading={loading} serviceId={id} />
       </div>

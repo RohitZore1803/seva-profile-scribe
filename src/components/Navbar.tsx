@@ -41,17 +41,22 @@ const Navbar = () => {
     if (user) {
       const fetchUserType = async () => {
         try {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("user_type")
-            .eq("id", user.id)
-            .single();
+          // Check both profile tables to determine user type
+          const [customerProfile, panditProfile] = await Promise.all([
+            supabase.from("customer_profiles").select("id").eq("id", user.id).single(),
+            supabase.from("pandit_profiles").select("id").eq("id", user.id).single()
+          ]);
           
-          if (profile) {
-            setUserType(profile.user_type);
+          if (customerProfile.data) {
+            setUserType("customer");
+          } else if (panditProfile.data) {
+            setUserType("pandit");
+          } else {
+            setUserType("customer"); // default fallback
           }
         } catch (error) {
           console.error("Error fetching user type:", error);
+          setUserType("customer"); // default fallback
         }
       };
       

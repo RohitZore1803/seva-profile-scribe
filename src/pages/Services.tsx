@@ -1,230 +1,263 @@
 
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import Footer from "@/components/Footer";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Search, Filter, Star, Clock, MapPin } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
-// New local image paths for the first 10 services
-const serviceImages = [
-  "/lovable-uploads/dc4a5c8a-3832-4bfc-860c-e235b8c225b7.png", // 1
-  "/lovable-uploads/2263f060-33f7-4944-b853-5a140ec68e36.png", // 2
-  "/lovable-uploads/2ee87fe5-d7a5-4aec-8867-4fb74c778dc2.png", // 3
-  "/lovable-uploads/c1a5b2a3-ee18-40e5-8581-c3c52d85a9b9.png", // 4
-  "/lovable-uploads/b9a8b749-7987-4c52-ba97-a3805e555da7.png", // 5
-  "/lovable-uploads/65e174e3-c7e8-4606-a7a6-2b458a910f4c.png", // 6
-  "/lovable-uploads/d8c3c874-61f6-4372-b601-3ebe4c4580c0.png", // 7
-  "/lovable-uploads/62f5c343-495a-4a65-bd20-2fc1c99fb626.png", // 8
-  "/lovable-uploads/695814da-ae02-443d-8ab9-80dfa76c9755.png", // 9
-  "/lovable-uploads/5d3e5a15-cb00-4549-9a4d-3efc26b032cd.png", // 10
-];
-
-// Map your uploaded images to the correct services (11-20) below:
-const services = [
-  {
-    id: 1,
-    title: "Vaastu Shanti",
-    category: "REGULAR",
-    img: serviceImages[0],
-    price: "₹1000.00",
-    link: "/product/1",
-  },
-  {
-    id: 2,
-    title: "Griha Pravesh",
-    category: "REGULAR",
-    img: serviceImages[1],
-    price: "₹1200.00",
-    link: "/product/2",
-  },
-  {
-    id: 3,
-    title: "Bhoomi Pooja",
-    category: "REGULAR",
-    img: serviceImages[2],
-    price: "₹1100.00",
-    link: "/product/3",
-  },
-  {
-    id: 4,
-    title: "Satya Narayan",
-    category: "REGULAR",
-    img: serviceImages[3],
-    price: "₹900.00",
-    link: "/product/4",
-  },
-  {
-    id: 5,
-    title: "Durja Pooja",
-    category: "REGULAR",
-    img: serviceImages[4],
-    price: "₹1000.00",
-    link: "/product/5",
-  },
-  {
-    id: 6,
-    title: "Office Opening Pooja",
-    category: "REGULAR",
-    img: serviceImages[5],
-    price: "₹2000.00",
-    link: "/product/6",
-  },
-  {
-    id: 7,
-    title: "Mahalakshmi Pooja",
-    category: "REGULAR",
-    img: serviceImages[6],
-    price: "₹1400.00",
-    link: "/product/7",
-  },
-  {
-    id: 8,
-    title: "Ganpati Pooja",
-    category: "REGULAR",
-    img: serviceImages[7],
-    price: "₹1200.00",
-    link: "/product/8",
-  },
-  {
-    id: 9,
-    title: "Rudra Abhishek",
-    category: "REGULAR",
-    img: serviceImages[8],
-    price: "₹1800.00",
-    link: "/product/9",
-  },
-  {
-    id: 10,
-    title: "Mangalagaur Pooja",
-    category: "REGULAR",
-    img: serviceImages[9],
-    price: "₹1300.00",
-    link: "/product/10",
-  },
-  {
-    id: 11,
-    title: "Ganpati Visarjan Pooja",
-    category: "FESTIVAL",
-    img: "/lovable-uploads/8f56705a-3508-48d2-b025-b9746aa30f85.png", // Ganpati Visarjan
-    price: "₹900.00",
-    link: "/product/11",
-  },
-  {
-    id: 12,
-    title: "Janmashtami Pooja",
-    category: "FESTIVAL",
-    img: "/lovable-uploads/6953ad6b-9da3-45bc-bc02-63febada4a34.png", // Janmashtami
-    price: "₹1100.00",
-    link: "/product/12",
-  },
-  {
-    id: 13,
-    title: "Diwali Lakshmi Pooja",
-    category: "FESTIVAL",
-    img: "/lovable-uploads/7a18e668-8e8d-4d40-a8a8-a286e4089324.png", // Diwali Lakshmi
-    price: "₹2100.00",
-    link: "/product/13",
-  },
-  {
-    id: 14,
-    title: "Ganapti Sthapana Pooja",
-    category: "FESTIVAL",
-    img: "/lovable-uploads/3a7d649e-67b9-4c49-9866-d9cb4f95f0aa.png", // Ganpati Sthapana
-    price: "₹1000.00",
-    link: "/product/14",
-  },
-  {
-    id: 15,
-    title: "Udak Shanti",
-    category: "SHANTI",
-    img: "/lovable-uploads/251e248a-4351-49bd-8651-6aeefdaee648.png", // Udak Shanti
-    price: "₹950.00",
-    link: "/product/15",
-  },
-  {
-    id: 16,
-    title: "Navgraha Shanti",
-    category: "SHANTI",
-    img: "/lovable-uploads/25013b1e-6e13-409f-803d-fbdd499fd7da.png", // Navgraha Shanti
-    price: "₹1700.00",
-    link: "/product/16",
-  },
-  {
-    id: 17,
-    title: "Ganapti Havan",
-    category: "HAVAN",
-    img: "/lovable-uploads/07f5ed97-9548-4467-b6f8-68cf9301ec72.png", // Ganapti Havan
-    price: "₹1500.00",
-    link: "/product/17",
-  },
-  {
-    id: 18,
-    title: "Dhan Laxmi Pooja",
-    category: "HAVAN",
-    img: "/lovable-uploads/b9ec4e6a-73d1-4536-8eaa-809140586224.png", // Dhan Laxmi
-    price: "₹2000.00",
-    link: "/product/18",
-  },
-  {
-    id: 19,
-    title: "Ganesh Havan",
-    category: "HAVAN",
-    img: "/lovable-uploads/9ec09147-1249-4be2-9391-19df10c3d32f.png", // Ganesh Havan
-    price: "₹1600.00",
-    link: "/product/19",
-  },
-  {
-    id: 20,
-    title: "Satyanarayan Havan",
-    category: "HAVAN",
-    img: "/lovable-uploads/1a779d2d-ca9c-4348-a5b7-1745de1e05fa.png", // Satyanarayan
-    price: "₹1200.00",
-    link: "/product/20",
-  },
-];
-
-// Use the Book A Pandit image as the logo
-const logoSrc = "/lovable-uploads/5d3e5a15-cb00-4549-9a4d-3efc26b032cd.png";
+interface Service {
+  id: number;
+  name: string;
+  description: string | null;
+  price: number | null;
+  image: string | null;
+  created_at: string;
+}
 
 export default function ServicesPage() {
+  const [services, setServices] = useState<Service[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredServices, setFilteredServices] = useState<Service[]>([]);
+
+  useEffect(() => {
+    fetchServices();
+  }, []);
+
+  useEffect(() => {
+    // Filter services based on search term
+    if (searchTerm) {
+      const filtered = services.filter(service =>
+        service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        service.description?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredServices(filtered);
+    } else {
+      setFilteredServices(services);
+    }
+  }, [searchTerm, services]);
+
+  const fetchServices = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("services")
+        .select("*")
+        .order("name");
+
+      if (error) throw error;
+      setServices(data || []);
+    } catch (error) {
+      console.error("Error fetching services:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load services. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatPrice = (priceInPaise: number | null) => {
+    if (!priceInPaise) return "Contact for price";
+    return `₹${(priceInPaise / 100).toLocaleString()}`;
+  };
+
+  const getPriceCategory = (priceInPaise: number | null) => {
+    if (!priceInPaise) return "contact";
+    const price = priceInPaise / 100;
+    if (price < 2000) return "budget";
+    if (price < 5000) return "standard";
+    return "premium";
+  };
+
+  const getPriceBadgeColor = (category: string) => {
+    switch (category) {
+      case "budget": return "bg-green-100 text-green-800";
+      case "standard": return "bg-blue-100 text-blue-800";
+      case "premium": return "bg-purple-100 text-purple-800";
+      default: return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50">
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading services...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-white min-h-screen w-full">
-      {/* Navbar */}
-      <header className="w-full shadow bg-white sticky top-0 z-20">
-        <div className="container mx-auto px-4 flex items-center justify-between py-3">
-          <Link to="/" className="flex items-center gap-2">
-            <img src={logoSrc} className="h-10 w-10 object-contain rounded-full bg-white border" alt="Logo" />
-            <span className="text-2xl font-playfair font-bold tracking-tight text-orange-600">E-GURUJI</span>
-          </Link>
-          <nav className="hidden md:flex gap-6 font-medium text-gray-700">
-            <Link to="/" className="hover:text-orange-700">Home</Link>
-            <Link to="/services" className="hover:text-orange-700">Services</Link>
-            <Link to="/about" className="hover:text-orange-700">About Us</Link>
-            <Link to="/contact" className="hover:text-orange-700">Contact</Link>
-          </nav>
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header Section */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl md:text-5xl font-bold text-orange-800 mb-4">
+            Our Pooja Services
+          </h1>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
+            Discover authentic spiritual services performed by experienced Pandits at your convenience
+          </p>
+          
+          {/* Search and Filter Bar */}
+          <div className="max-w-2xl mx-auto">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Input
+                type="text"
+                placeholder="Search for pooja services..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 pr-4 py-3 text-lg border-2 border-orange-200 focus:border-orange-400 bg-white/80 backdrop-blur-sm"
+              />
+            </div>
+          </div>
         </div>
-      </header>
-      {/* Services Section */}
-      <section className="container mx-auto py-10">
-        <h2 className="font-playfair text-4xl font-semibold mb-10 text-center text-orange-700">Services</h2>
-        <div className="grid grid-cols-1 xsm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-7">
-          {services.map((s) => (
-            <Link
-              key={s.title}
-              to={s.link}
-              className="service-card bg-white rounded-lg shadow hover:shadow-xl transition-all flex flex-col p-3 cursor-pointer group h-full"
-              style={{ textDecoration: "none" }}
-            >
-              <img src={s.img} alt={s.title} className="w-full h-44 object-cover rounded group-hover:opacity-85" />
-              <div className="service-info flex flex-col flex-1 py-3 px-1">
-                <h3 className="font-bold text-xs text-gray-500 mb-1">{s.category}</h3>
-                <h2 className="text-lg font-semibold mb-1 group-hover:text-orange-700 transition">{s.title}</h2>
-                <p className="text-orange-700 font-bold group-hover:underline">{s.price}</p>
-              </div>
+
+        {/* Services Grid */}
+        {filteredServices.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-6xl mb-4">🔍</div>
+            <h3 className="text-2xl font-bold text-gray-600 mb-2">No services found</h3>
+            <p className="text-gray-500">
+              {searchTerm ? `No services match "${searchTerm}"` : "No services available at the moment"}
+            </p>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+            {filteredServices.map((service) => (
+              <Card key={service.id} className="hover:shadow-2xl transition-all duration-300 transform hover:scale-105 border-0 shadow-lg overflow-hidden bg-white/90 backdrop-blur-sm">
+                <div className="relative">
+                  {service.image ? (
+                    <img 
+                      src={service.image} 
+                      alt={service.name}
+                      className="w-full h-56 object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-56 bg-gradient-to-br from-orange-200 to-amber-200 flex items-center justify-center">
+                      <span className="text-6xl">🕉️</span>
+                    </div>
+                  )}
+                  
+                  {/* Price Badge */}
+                  <div className="absolute top-4 right-4">
+                    <Badge className={`${getPriceBadgeColor(getPriceCategory(service.price))} font-bold text-sm px-3 py-1`}>
+                      {formatPrice(service.price)}
+                    </Badge>
+                  </div>
+                  
+                  {/* Service Category Badge */}
+                  <div className="absolute top-4 left-4">
+                    <Badge className="bg-orange-600 text-white font-semibold">
+                      Traditional
+                    </Badge>
+                  </div>
+                </div>
+                
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-2xl text-orange-700 mb-2">
+                    {service.name}
+                  </CardTitle>
+                  <div className="flex items-center gap-4 text-sm text-gray-500">
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-4 h-4" />
+                      <span>2-3 hours</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <MapPin className="w-4 h-4" />
+                      <span>At your location</span>
+                    </div>
+                  </div>
+                </CardHeader>
+                
+                <CardContent className="pt-0">
+                  <CardDescription className="text-gray-600 mb-6 text-base leading-relaxed">
+                    {service.description || "Traditional pooja service performed with authentic rituals and proper arrangements."}
+                  </CardDescription>
+                  
+                  {/* Features */}
+                  <div className="mb-6">
+                    <h4 className="font-semibold text-gray-700 mb-2">Includes:</h4>
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant="secondary" className="text-xs">Pandit Service</Badge>
+                      <Badge variant="secondary" className="text-xs">All Materials</Badge>
+                      <Badge variant="secondary" className="text-xs">Prasad</Badge>
+                    </div>
+                  </div>
+                  
+                  {/* Rating */}
+                  <div className="flex items-center gap-2 mb-6">
+                    <div className="flex text-yellow-400">
+                      {[...Array(5)].map((_, i) => (
+                        <Star key={i} className="w-4 h-4 fill-current" />
+                      ))}
+                    </div>
+                    <span className="text-sm text-gray-600">(4.8/5 rating)</span>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <Link to={`/product/${service.id}`}>
+                      <Button 
+                        variant="outline" 
+                        className="w-full border-2 border-orange-600 text-orange-600 hover:bg-orange-50 font-semibold py-2"
+                      >
+                        View Details
+                      </Button>
+                    </Link>
+                    <Link to={`/credentials/${service.id}`}>
+                      <Button className="w-full bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-semibold py-2 shadow-lg hover:shadow-xl transition-all duration-200">
+                        Book Now →
+                      </Button>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Bottom CTA */}
+        <div className="text-center mt-16 bg-white/60 backdrop-blur-sm rounded-2xl p-8 max-w-4xl mx-auto">
+          <h3 className="text-3xl font-bold text-orange-800 mb-4">
+            Need a Custom Pooja Service?
+          </h3>
+          <p className="text-lg text-gray-600 mb-6">
+            Can't find what you're looking for? Contact us for personalized pooja arrangements
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link to="/contact">
+              <Button 
+                size="lg"
+                className="bg-orange-600 hover:bg-orange-700 text-white px-8 py-3 font-semibold rounded-full"
+              >
+                Contact Us
+              </Button>
             </Link>
-          ))}
+            <Link to="/auth?role=customer">
+              <Button 
+                size="lg"
+                variant="outline"
+                className="border-2 border-orange-600 text-orange-600 hover:bg-orange-50 px-8 py-3 font-semibold rounded-full"
+              >
+                Register Now
+              </Button>
+            </Link>
+          </div>
         </div>
-      </section>
-      {/* Footer */}
-      <Footer />
+      </div>
     </div>
   );
 }
-

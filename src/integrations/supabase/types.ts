@@ -14,7 +14,161 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bookings: {
+        Row: {
+          address: string | null
+          assigned_at: string | null
+          created_at: string
+          created_by: string
+          fromdate: string
+          id: string
+          location: string | null
+          pandit_id: string | null
+          service_id: number | null
+          status: string | null
+          todate: string
+        }
+        Insert: {
+          address?: string | null
+          assigned_at?: string | null
+          created_at?: string
+          created_by: string
+          fromdate: string
+          id?: string
+          location?: string | null
+          pandit_id?: string | null
+          service_id?: number | null
+          status?: string | null
+          todate: string
+        }
+        Update: {
+          address?: string | null
+          assigned_at?: string | null
+          created_at?: string
+          created_by?: string
+          fromdate?: string
+          id?: string
+          location?: string | null
+          pandit_id?: string | null
+          service_id?: number | null
+          status?: string | null
+          todate?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_profiles: {
+        Row: {
+          address: string | null
+          created_at: string
+          email: string
+          id: string
+          name: string
+          profile_image_url: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          email: string
+          id: string
+          name: string
+          profile_image_url?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          profile_image_url?: string | null
+        }
+        Relationships: []
+      }
+      pandit_profiles: {
+        Row: {
+          aadhar_number: string
+          address: string
+          created_at: string
+          email: string
+          expertise: string
+          id: string
+          name: string
+          profile_image_url: string | null
+        }
+        Insert: {
+          aadhar_number: string
+          address: string
+          created_at?: string
+          email: string
+          expertise: string
+          id: string
+          name: string
+          profile_image_url?: string | null
+        }
+        Update: {
+          aadhar_number?: string
+          address?: string
+          created_at?: string
+          email?: string
+          expertise?: string
+          id?: string
+          name?: string
+          profile_image_url?: string | null
+        }
+        Relationships: []
+      }
+      services: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: number
+          image: string | null
+          name: string
+          price: number | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: number
+          image?: string | null
+          name: string
+          price?: number | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: number
+          image?: string | null
+          name?: string
+          price?: number | null
+        }
+        Relationships: []
+      }
+      subscribers: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
