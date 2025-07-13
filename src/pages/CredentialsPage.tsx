@@ -1,4 +1,3 @@
-
 import * as React from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { format } from "date-fns";
@@ -87,12 +86,12 @@ export default function CredentialsPage() {
 
       console.log('[Booking DEBUG] Creating booking in database');
 
-      // Create booking in database with both fromDate and toDate
+      // Create booking in database with fromdate and todate
       const bookingData = {
         created_by: user.id,
         service_id: serviceIdAsNumber,
-        tentative_date: data.fromDate.toISOString(),
-        // Note: Current schema only has tentative_date, but we'll store both dates in localStorage for now
+        fromdate: data.fromDate.toISOString(),
+        todate: data.toDate.toISOString(),
         location: data.location,
         address: data.address,
         status: "pending",
@@ -111,7 +110,7 @@ export default function CredentialsPage() {
 
       console.log('[Booking DEBUG] Booking created successfully:', newBooking);
 
-      // Also store in localStorage for cross-dashboard display with both dates
+      // Store in localStorage for cross-dashboard display
       const bookingDetails = {
         id: newBooking.id,
         service_name: existingService.name,
@@ -120,7 +119,6 @@ export default function CredentialsPage() {
         customer_email: user.email,
         from_date: format(data.fromDate, "yyyy-MM-dd"),
         to_date: format(data.toDate, "yyyy-MM-dd"),
-        tentative_date: format(data.fromDate, "yyyy-MM-dd"),
         location: data.location,
         address: data.address,
         status: "pending",

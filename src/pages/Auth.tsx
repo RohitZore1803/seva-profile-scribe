@@ -52,31 +52,23 @@ export default function AuthPage() {
 
   const redirectToDashboard = async () => {
     try {
-      // Check user profile and redirect based on user_type
-      const { data: userProfile } = await supabase
-        .from("profiles")
-        .select("id, user_type")
-        .eq("id", user.id)
-        .single();
+      // Check which profile table the user exists in
+      const [customerProfile, panditProfile] = await Promise.all([
+        supabase.from("customer_profiles").select("id").eq("id", user.id).single(),
+        supabase.from("pandit_profiles").select("id").eq("id", user.id).single()
+      ]);
 
-      if (userProfile) {
-        if (userProfile.user_type === "customer") {
-          navigate("/dashboard-customer", { replace: true });
-        } else if (userProfile.user_type === "pandit") {
-          navigate("/dashboard-pandit", { replace: true });
-        } else {
-          // Default fallback based on role
-          const fallbackPath = role === "pandit" ? "/dashboard-pandit" : "/dashboard-customer";
-          navigate(fallbackPath, { replace: true });
-        }
-        return;
+      if (customerProfile.data) {
+        navigate("/dashboard-customer", { replace: true });
+      } else if (panditProfile.data) {
+        navigate("/dashboard-pandit", { replace: true });
+      } else {
+        // Fallback based on role parameter
+        const fallbackPath = role === "pandit" ? "/dashboard-pandit" : "/dashboard-customer";
+        navigate(fallbackPath, { replace: true });
       }
-
-      // Default fallback based on role
-      const fallbackPath = role === "pandit" ? "/dashboard-pandit" : "/dashboard-customer";
-      navigate(fallbackPath, { replace: true });
     } catch (error) {
-      console.error("Error fetching user profile:", error);
+      console.error("Error checking user profile:", error);
       const fallbackPath = role === "pandit" ? "/dashboard-pandit" : "/dashboard-customer";
       navigate(fallbackPath, { replace: true });
     }
@@ -207,20 +199,61 @@ export default function AuthPage() {
       return;
     }
 
-    // If user is created and we have a profile image, upload it
-    if (authData.user && profileImage) {
-      const profileImageUrl = await uploadProfileImage(authData.user.id);
+    // Create profile in appropriate table based on role
+    if (authData.user) {
+      let profileImageUrl = null;
       
-      if (profileImageUrl) {
-        // Update the user's profile with the image URL in the profiles table
-        const { error: profileError } = await supabase
-          .from("profiles")
-          .update({ profile_image_url: profileImageUrl })
-          .eq('id', authData.user.id);
+      // Upload profile image if provided
+      if (profileImage) {
+        profileImageUrl = await uploadProfileImage(authData.user.id);
+      }
 
-        if (profileError) {
-          console.error('Profile image update error:', profileError);
+      try {
+        if (role === "customer") {
+          // Insert into customer_profiles table
+          const { error: profileError } = await supabase
+            .from("customer_profiles")
+            .insert({
+              id: authData.user.id,
+              name: formData.name,
+              email: formData.email,
+              profile_image_url: profileImageUrl,
+              address: formData.address || null,
+            });
+
+          if (profileError) {
+            console.error('Customer profile creation error:', profileError);
+            toast({
+              title: "Profile Error",
+              description: "Account created but profile setup failed. Please contact support.",
+              variant: "destructive",
+            });
+          }
+        } else if (role === "pandit") {
+          // Insert into pandit_profiles table
+          const { error: profileError } = await supabase
+            .from("pandit_profiles")
+            .insert({
+              id: authData.user.id,
+              name: formData.name,
+              email: formData.email,
+              profile_image_url: profileImageUrl,
+              address: formData.address,
+              expertise: formData.expertise,
+              aadhar_number: formData.aadhar_number,
+            });
+
+          if (profileError) {
+            console.error('Pandit profile creation error:', profileError);
+            toast({
+              title: "Profile Error",
+              description: "Account created but profile setup failed. Please contact support.",
+              variant: "destructive",
+            });
+          }
         }
+      } catch (error) {
+        console.error('Profile creation error:', error);
       }
     }
 
@@ -247,7 +280,7 @@ export default function AuthPage() {
 
     setLoading(true);
     
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data: authData, error } = await supabase.auth.signInWithPassword({
       email: formData.email,
       password: formData.password,
     });
@@ -258,6 +291,43 @@ export default function AuthPage() {
         description: error.message,
         variant: "destructive",
       });
+      setLoading(false);
+      return;
+    }
+
+    // Verify user exists in correct profile table
+    if (authData.user) {
+      let profileExists = false;
+      
+      if (role === "customer") {
+        const { data: customerProfile } = await supabase
+          .from("customer_profiles")
+          .select("id")
+          .eq("id", authData.user.id)
+          .single();
+        
+        profileExists = !!customerProfile;
+      } else if (role === "pandit") {
+        const { data: panditProfile } = await supabase
+          .from("pandit_profiles")
+          .select("id")
+          .eq("id", authData.user.id)
+          .single();
+        
+        profileExists = !!panditProfile;
+      }
+
+      if (!profileExists) {
+        // Sign out the user since they're trying to access wrong portal
+        await supabase.auth.signOut();
+        toast({
+          title: "Access Denied",
+          description: `This account is not registered as a ${role}. Please use the correct portal or create a new account.`,
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
     }
     
     setLoading(false);
