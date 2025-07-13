@@ -1,3 +1,4 @@
+
 import * as React from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { format } from "date-fns";
@@ -44,13 +45,20 @@ export default function CredentialsPage() {
       return;
     }
 
-    // Keep service ID as string - it might be a UUID in the services table
-    const serviceId = id;
-
     if (!data.fromDate || !data.toDate) {
       toast({
-        title: "Date Required",
-        description: "Please provide both dates.",
+        title: "Dates Required",
+        description: "Please provide both from and to dates.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate that toDate is after fromDate
+    if (data.toDate <= data.fromDate) {
+      toast({
+        title: "Invalid Date Range",
+        description: "To date must be after from date.",
         variant: "destructive",
       });
       return;
@@ -60,7 +68,7 @@ export default function CredentialsPage() {
 
     try {
       // Convert service ID to integer for database lookup
-      const serviceIdAsNumber = parseInt(serviceId, 10);
+      const serviceIdAsNumber = parseInt(id, 10);
       if (isNaN(serviceIdAsNumber)) {
         throw new Error("Invalid service ID");
       }
@@ -77,20 +85,42 @@ export default function CredentialsPage() {
         throw new Error("Service not found");
       }
 
-      // Generate unique booking ID for localStorage
-      const bookingId = `booking_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      console.log('[Booking DEBUG] Creating booking in database');
 
-      console.log('[Booking DEBUG] Saving to localStorage only');
+      // Create booking in database with both fromDate and toDate
+      const bookingData = {
+        created_by: user.id,
+        service_id: serviceIdAsNumber,
+        tentative_date: data.fromDate.toISOString(),
+        // Note: Current schema only has tentative_date, but we'll store both dates in localStorage for now
+        location: data.location,
+        address: data.address,
+        status: "pending",
+      };
 
-      // Store booking in localStorage for cross-dashboard display
+      const { data: newBooking, error: bookingError } = await supabase
+        .from("bookings")
+        .insert([bookingData])
+        .select()
+        .single();
+
+      if (bookingError) {
+        console.error('[Booking creation error]:', bookingError);
+        throw new Error(`Failed to create booking: ${bookingError.message}`);
+      }
+
+      console.log('[Booking DEBUG] Booking created successfully:', newBooking);
+
+      // Also store in localStorage for cross-dashboard display with both dates
       const bookingDetails = {
-        id: bookingId,
+        id: newBooking.id,
         service_name: existingService.name,
         service_id: serviceIdAsNumber,
         customer_name: profile?.name || user.email,
         customer_email: user.email,
-        tentative_date: format(data.fromDate, "yyyy-MM-dd"),
+        from_date: format(data.fromDate, "yyyy-MM-dd"),
         to_date: format(data.toDate, "yyyy-MM-dd"),
+        tentative_date: format(data.fromDate, "yyyy-MM-dd"),
         location: data.location,
         address: data.address,
         status: "pending",

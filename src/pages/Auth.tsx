@@ -52,27 +52,23 @@ export default function AuthPage() {
 
   const redirectToDashboard = async () => {
     try {
-      // Check customer profile first
-      const { data: customerProfile } = await supabase
-        .from("customer_profiles")
-        .select("id")
+      // Check user profile and redirect based on user_type
+      const { data: userProfile } = await supabase
+        .from("profiles")
+        .select("id, user_type")
         .eq("id", user.id)
         .single();
 
-      if (customerProfile) {
-        navigate("/dashboard-customer", { replace: true });
-        return;
-      }
-
-      // Check pandit profile
-      const { data: panditProfile } = await supabase
-        .from("pandit_profiles")
-        .select("id")
-        .eq("id", user.id)
-        .single();
-
-      if (panditProfile) {
-        navigate("/dashboard-pandit", { replace: true });
+      if (userProfile) {
+        if (userProfile.user_type === "customer") {
+          navigate("/dashboard-customer", { replace: true });
+        } else if (userProfile.user_type === "pandit") {
+          navigate("/dashboard-pandit", { replace: true });
+        } else {
+          // Default fallback based on role
+          const fallbackPath = role === "pandit" ? "/dashboard-pandit" : "/dashboard-customer";
+          navigate(fallbackPath, { replace: true });
+        }
         return;
       }
 
@@ -216,10 +212,9 @@ export default function AuthPage() {
       const profileImageUrl = await uploadProfileImage(authData.user.id);
       
       if (profileImageUrl) {
-        // Update the user's profile with the image URL in the appropriate table
-        const tableName = role === "pandit" ? "pandit_profiles" : "customer_profiles";
+        // Update the user's profile with the image URL in the profiles table
         const { error: profileError } = await supabase
-          .from(tableName)
+          .from("profiles")
           .update({ profile_image_url: profileImageUrl })
           .eq('id', authData.user.id);
 
