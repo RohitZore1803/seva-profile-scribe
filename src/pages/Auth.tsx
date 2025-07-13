@@ -52,37 +52,36 @@ export default function AuthPage() {
 
   const redirectToDashboard = async () => {
     try {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("user_type")
+      // Check customer profile first
+      const { data: customerProfile } = await supabase
+        .from("customer_profiles")
+        .select("id")
         .eq("id", user.id)
         .single();
 
-      let redirectPath = "/dashboard-customer";
-
-      if (profile) {
-        switch (profile.user_type) {
-          case "admin":
-            redirectPath = "/dashboard-admin";
-            break;
-          case "pandit":
-            redirectPath = "/dashboard-pandit";
-            break;
-          default:
-            redirectPath = "/dashboard-customer";
-            break;
-        }
-      } else if (role === "pandit") {
-        redirectPath = "/dashboard-pandit";
+      if (customerProfile) {
+        navigate("/dashboard-customer", { replace: true });
+        return;
       }
 
-      navigate(redirectPath, { replace: true });
+      // Check pandit profile
+      const { data: panditProfile } = await supabase
+        .from("pandit_profiles")
+        .select("id")
+        .eq("id", user.id)
+        .single();
+
+      if (panditProfile) {
+        navigate("/dashboard-pandit", { replace: true });
+        return;
+      }
+
+      // Default fallback based on role
+      const fallbackPath = role === "pandit" ? "/dashboard-pandit" : "/dashboard-customer";
+      navigate(fallbackPath, { replace: true });
     } catch (error) {
       console.error("Error fetching user profile:", error);
-      let fallbackPath = "/dashboard-customer";
-      if (role === "pandit") {
-        fallbackPath = "/dashboard-pandit";
-      }
+      const fallbackPath = role === "pandit" ? "/dashboard-pandit" : "/dashboard-customer";
       navigate(fallbackPath, { replace: true });
     }
   };
@@ -217,9 +216,10 @@ export default function AuthPage() {
       const profileImageUrl = await uploadProfileImage(authData.user.id);
       
       if (profileImageUrl) {
-        // Update the user's profile with the image URL
+        // Update the user's profile with the image URL in the appropriate table
+        const tableName = role === "pandit" ? "pandit_profiles" : "customer_profiles";
         const { error: profileError } = await supabase
-          .from('profiles')
+          .from(tableName)
           .update({ profile_image_url: profileImageUrl })
           .eq('id', authData.user.id);
 
@@ -427,8 +427,8 @@ export default function AuthPage() {
                 </form>
               </TabsContent>
               <TabsContent value="signup">
-                 <form onSubmit={handleSignUp} className="space-y-4">
-                   <div className="space-y-2">
+                <form onSubmit={handleSignUp} className="space-y-4">
+                  <div className="space-y-2">
                     <Label htmlFor="name">Full Name</Label>
                     <Input
                       id="name"
@@ -457,6 +457,55 @@ export default function AuthPage() {
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                       required
                     />
+                  </div>
+                  
+                  {/* Profile Image Upload Section */}
+                  <div className="space-y-2">
+                    <Label>Profile Picture (Optional)</Label>
+                    <div className="flex items-center space-x-4">
+                      {previewUrl ? (
+                        <div className="relative">
+                          <Avatar className="h-16 w-16">
+                            <AvatarImage src={previewUrl} alt="Profile preview" />
+                            <AvatarFallback>
+                              <Camera className="h-8 w-8 text-gray-400" />
+                            </AvatarFallback>
+                          </Avatar>
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
+                            onClick={removeImage}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="h-16 w-16 border-2 border-dashed border-gray-300 rounded-full flex items-center justify-center bg-gray-50">
+                          <Camera className="h-8 w-8 text-gray-400" />
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageSelect}
+                          className="hidden"
+                          id="profile-upload"
+                        />
+                        <Label
+                          htmlFor="profile-upload"
+                          className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-orange-100 text-orange-700 rounded-md hover:bg-orange-200 transition-colors"
+                        >
+                          <Upload className="h-4 w-4" />
+                          Choose Photo
+                        </Label>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Max 5MB, JPG/PNG only
+                        </p>
+                      </div>
+                    </div>
                   </div>
                   
                   {role === "pandit" && (
