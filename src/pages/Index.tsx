@@ -8,7 +8,7 @@ const Index = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-6xl font-bold text-orange-800 mb-4">
-            🕉️ Guruji Pooja Seva Portal
+            E-GURUJI
           </h1>
           <p className="text-lg text-orange-700 mb-8">
             Connect with experienced Pandits for authentic Pooja services
