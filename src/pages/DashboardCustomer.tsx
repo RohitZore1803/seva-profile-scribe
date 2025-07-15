@@ -1,275 +1,239 @@
-import { useSession } from "@/hooks/useSession";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
+import { Calendar, Clock, MapPin, User, Edit, Phone, Mail } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useProfile } from "@/hooks/useProfile";
 import EditCustomerProfileModal from "@/components/EditCustomerProfileModal";
-import { Edit } from "lucide-react";
-import DashboardHeader from "@/components/DashboardHeader";
-import DashboardStats from "@/components/DashboardStats";
-import BookingsTable from "@/components/BookingsTable";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
-import { Booking } from "@/components/BookingsTable";
-
-type LocalStorageBooking = {
+interface Booking {
   id: string;
-  service_name: string;
   service_id: number;
-  customer_name: string;
-  customer_email: string;
-  tentative_date: string;
-  to_date: string;
+  fromdate: string;
+  todate: string;
+  status: string;
   location: string;
   address: string;
-  status: string;
+  phone: string;
   created_at: string;
-};
+  services: {
+    name: string;
+    price: number;
+  };
+}
 
 export default function DashboardCustomer() {
-  const { user, loading: sessionLoading } = useSession();
-  const navigate = useNavigate();
-  const [profile, setProfile] = useState<any>(null);
-  const [openEditModal, setOpenEditModal] = useState(false);
+  const { profile, loading: profileLoading, updateProfile } = useProfile();
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [localBookings, setLocalBookings] = useState<LocalStorageBooking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [initialLoad, setInitialLoad] = useState(true);
-  const [activeFilter, setActiveFilter] = useState<string>("all");
+  const [editModalOpen, setEditModalOpen] = useState(false);
 
-  // Handle authentication state changes
   useEffect(() => {
-    if (sessionLoading) return;
-    
-    if (!user) {
-      navigate("/auth?role=customer", { replace: true });
-      return;
-    }
+    fetchBookings();
+  }, []);
 
-    setInitialLoad(false);
-  }, [user, sessionLoading, navigate]);
-
-  // Load profile when user is confirmed
-  useEffect(() => {
-    if (sessionLoading || !user || initialLoad) return;
-
-    const loadProfile = async () => {
-      try {
-        setLoading(true);
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", user.id)
-          .single();
-
-        if (data) {
-          setProfile(data);
-        } else if (!error || error.code === 'PGRST116') {
-          const { data: newProfile } = await supabase
-            .from("profiles")
-            .insert([{
-              id: user.id,
-              name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
-              email: user.email || '',
-              user_type: 'customer',
-              is_verified: false
-            }])
-            .select()
-            .single();
-
-          if (newProfile) {
-            setProfile(newProfile);
-          }
-        }
-      } catch (error) {
-        console.error('Profile load error:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadProfile();
-  }, [user, sessionLoading, initialLoad]);
-
-  // Load bookings when user and profile are ready
-  useEffect(() => {
-    if (sessionLoading || !user || initialLoad) return;
-    
-    const loadBookings = async () => {
-      try {
-        const { data } = await supabase
-          .from("bookings")
-          .select("*, services:service_id (*), assigned_pandit:pandit_id (*)")
-          .eq("created_by", user.id)
-          .order("created_at", { ascending: false });
-
-        if (data) {
-          const mapped = data.map((row: any) => ({
-            id: row.id,
-            service_id: row.service_id,
-            tentative_date: row.tentative_date,
-            status: row.status,
-            invoice_url: row.invoice_url,
-            created_at: row.created_at,
-            location: row.location,
-            address: row.address,
-            service: row.services,
-            assigned_pandit: row.assigned_pandit,
-          }));
-          setBookings(mapped);
-        }
-      } catch (error) {
-        console.error('Booking load error:', error);
-      }
-    };
-
-    const loadLocalBookings = () => {
-      try {
-        const stored = localStorage.getItem('recentBookings');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          const userBookings = parsed.filter((booking: LocalStorageBooking) => 
-            booking.customer_email === user.email
-          );
-          setLocalBookings(userBookings);
-        }
-      } catch (error) {
-        console.error('Error loading local bookings:', error);
-      }
-    };
-
-    loadBookings();
-    loadLocalBookings();
-  }, [user, sessionLoading, initialLoad]);
-
-  const handleProfileUpdated = (updated: any) => {
-    setProfile(updated);
-  };
-
-  const handleLogout = async () => {
+  const fetchBookings = async () => {
     try {
-      await supabase.auth.signOut();
-      navigate("/", { replace: true });
+      const { data: bookingsData, error } = await supabase
+        .from("bookings")
+        .select(`
+          *,
+          services (
+            name,
+            price
+          )
+        `)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setBookings(bookingsData || []);
     } catch (error) {
-      console.error('Logout error:', error);
-      navigate("/", { replace: true });
+      console.error("Error fetching bookings:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (sessionLoading || initialLoad || loading) {
+  const handleProfileUpdate = async (updatedProfile: any) => {
+    if (updateProfile) {
+      await updateProfile(updatedProfile);
+    }
+    setEditModalOpen(false);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "pending":
+        return "bg-yellow-100 text-yellow-800";
+      case "confirmed":
+        return "bg-blue-100 text-blue-800";
+      case "completed":
+        return "bg-green-100 text-green-800";
+      case "cancelled":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const formatPrice = (price: number) => {
+    return `₹${(price / 100).toLocaleString()}`;
+  };
+
+  if (profileLoading || loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your dashboard...</p>
+          <p className="text-gray-600">Loading dashboard...</p>
         </div>
       </div>
     );
   }
 
-  if (!user) {
-    return null;
-  }
-
-  const allBookings: Booking[] = [...bookings, ...localBookings.map(lb => ({
-    id: lb.id,
-    service_id: lb.service_id,
-    tentative_date: lb.tentative_date,
-    status: lb.status,
-    invoice_url: null,
-    created_at: lb.created_at,
-    location: lb.location,
-    address: lb.address,
-    service: { name: lb.service_name },
-    assigned_pandit: null,
-  } as Booking))];
-
-  const stats = {
-    totalBookings: allBookings.length,
-    pendingBookings: allBookings.filter(b => b.status === "pending").length,
-    confirmedBookings: allBookings.filter(b => b.status === "confirmed").length,
-    completedBookings: allBookings.filter(b => b.status === "completed").length,
-  };
-
-  const filteredBookings = activeFilter === "all" 
-    ? allBookings 
-    : allBookings.filter(booking => booking.status === activeFilter);
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100">
-      <div className="pt-8 px-5 pb-10">
-        <DashboardHeader
-          title="Customer Dashboard"
-          subtitle="Browse and book pooja services, or manage your bookings"
-          profile={{
-            name: profile?.name || 'User',
-            email: user.email,
-            profile_image_url: profile?.profile_image_url
-          }}
-          role="Customer"
-          onLogout={handleLogout}
-          showBookButton={true}
-          onBookNow={() => navigate("/services")}
-        />
-
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Profile Sidebar */}
-          <div className="lg:w-64 flex-shrink-0">
-            <div className="bg-white rounded-xl shadow-md p-6">
-              <div className="text-center mb-6">
-                <div className="w-20 h-20 bg-orange-100 rounded-full mx-auto mb-3 flex items-center justify-center">
-                  <span className="text-2xl font-bold text-orange-700">
-                    {profile?.name?.charAt(0)?.toUpperCase() || 'U'}
-                  </span>
-                </div>
-                <h3 className="font-semibold text-lg">{profile?.name || 'User'}</h3>
-                <p className="text-sm text-gray-500">Customer Account</p>
-              </div>
-              
-              <Button 
-                onClick={() => setOpenEditModal(true)} 
-                variant="outline" 
-                className="w-full flex items-center gap-2 hover:scale-105 transition-transform"
-              >
-                <Edit className="w-4 h-4" /> 
-                Edit Profile
-              </Button>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50">
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-6xl mx-auto">
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-orange-800 mb-2">Customer Dashboard</h1>
+            <p className="text-gray-600">Welcome back! Manage your bookings and profile here.</p>
           </div>
 
-          {/* Main Content */}
-          <div className="flex-1">
-            <DashboardStats
-              stats={stats}
-              activeFilter={activeFilter}
-              onFilterChange={setActiveFilter}
-            />
+          <div className="grid lg:grid-cols-3 gap-8">
+            {/* Profile Section */}
+            <div className="lg:col-span-1">
+              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+                <CardHeader className="text-center pb-4">
+                  <div className="flex flex-col items-center space-y-4">
+                    <Avatar className="w-24 h-24">
+                      <AvatarImage src={profile?.profile_image_url || undefined} />
+                      <AvatarFallback className="text-2xl font-bold bg-orange-100 text-orange-600">
+                        {profile?.name?.charAt(0).toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <CardTitle className="text-xl text-orange-800">{profile?.name || 'User'}</CardTitle>
+                      <CardDescription className="flex items-center gap-1 mt-1">
+                        <Mail className="w-4 h-4" />
+                        {profile?.email}
+                      </CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {profile?.address && (
+                    <div className="flex items-start gap-2 text-sm text-gray-600">
+                      <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                      <span>{profile.address}</span>
+                    </div>
+                  )}
+                  
+                  <div className="pt-4 border-t">
+                    <Button 
+                      onClick={() => setEditModalOpen(true)}
+                      className="w-full bg-orange-600 hover:bg-orange-700 text-white"
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit Profile
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
-            <div className="bg-white rounded-xl shadow-md overflow-hidden">
-              <div className="px-6 py-4 border-b bg-gray-50">
-                <h2 className="text-xl font-semibold text-gray-800">
-                  {activeFilter === "all" ? "All Bookings" : `${activeFilter.charAt(0).toUpperCase() + activeFilter.slice(1)} Bookings`}
-                </h2>
-                <p className="text-sm text-gray-600 mt-1">
-                  Track your booking history and current requests
-                </p>
-              </div>
-              
-              <BookingsTable
-                bookings={filteredBookings}
-                loading={false}
-                role="customer"
-              />
+            {/* Bookings Section */}
+            <div className="lg:col-span-2">
+              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+                <CardHeader>
+                  <CardTitle className="text-2xl text-orange-800">Your Bookings</CardTitle>
+                  <CardDescription>
+                    Track your pooja service bookings and their status
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {bookings.length === 0 ? (
+                    <div className="text-center py-12">
+                      <div className="text-6xl mb-4">📅</div>
+                      <h3 className="text-xl font-semibold text-gray-600 mb-2">No Bookings Yet</h3>
+                      <p className="text-gray-500 mb-6">Start by booking your first pooja service</p>
+                      <Button 
+                        onClick={() => window.location.href = '/services'}
+                        className="bg-orange-600 hover:bg-orange-700 text-white"
+                      >
+                        Browse Services
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {bookings.map((booking) => (
+                        <Card key={booking.id} className="border border-orange-100 hover:shadow-md transition-shadow">
+                          <CardContent className="p-4">
+                            <div className="flex justify-between items-start mb-3">
+                              <div>
+                                <h4 className="font-semibold text-lg text-orange-800">
+                                  {booking.services?.name}
+                                </h4>
+                                <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
+                                  <div className="flex items-center gap-1">
+                                    <Calendar className="w-4 h-4" />
+                                    <span>{new Date(booking.fromdate).toLocaleDateString()}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="w-4 h-4" />
+                                    <span>
+                                      {new Date(booking.fromdate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              <Badge className={getStatusColor(booking.status)}>
+                                {booking.status?.toUpperCase()}
+                              </Badge>
+                            </div>
+                            
+                            <div className="space-y-2 text-sm text-gray-600">
+                              {booking.location && (
+                                <div className="flex items-center gap-2">
+                                  <MapPin className="w-4 h-4" />
+                                  <span>{booking.location}</span>
+                                </div>
+                              )}
+                              {booking.phone && (
+                                <div className="flex items-center gap-2">
+                                  <Phone className="w-4 h-4" />
+                                  <span>{booking.phone}</span>
+                                </div>
+                              )}
+                              {booking.services?.price && (
+                                <div className="flex items-center gap-2">
+                                  <span className="font-semibold">Price: {formatPrice(booking.services.price)}</span>
+                                </div>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
-
-        <EditCustomerProfileModal
-          open={openEditModal}
-          onClose={() => setOpenEditModal(false)}
-          profile={profile}
-          onProfileUpdated={handleProfileUpdated}
-        />
       </div>
+
+      {/* Edit Profile Modal */}
+      <EditCustomerProfileModal
+        open={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        profile={profile}
+        onProfileUpdated={handleProfileUpdate}
+      />
     </div>
   );
 }

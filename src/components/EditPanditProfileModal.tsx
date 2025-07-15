@@ -62,6 +62,8 @@ export default function EditPanditProfileModal({
         if (error) throw error;
         profile_image_url = supabase.storage.from("avatars").getPublicUrl(data.path).data.publicUrl;
       }
+      
+      // Update the unified profiles table
       const { error: updateError } = await supabase
         .from("profiles")
         .update({
