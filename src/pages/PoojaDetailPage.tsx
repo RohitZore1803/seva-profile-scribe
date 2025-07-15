@@ -1,11 +1,10 @@
-
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { poojas } from "@/data/poojas";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Clock, MapPin, Users, Star, Heart, Share2, Calendar, Phone } from "lucide-react";
+import { Clock, MapPin, Users, Star, Heart, Share2, Calendar, Phone, ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
 
@@ -90,58 +89,86 @@ export default function PoojaDetailPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
-      {/* Hero Section */}
-      <div className="relative h-96 bg-gradient-to-r from-orange-600 to-amber-600 overflow-hidden">
-        <div className="absolute inset-0 bg-black/20"></div>
-        <div className="relative z-10 flex items-center justify-center h-full text-white">
-          <div className="text-center px-4">
-            <h1 className="text-4xl md:text-6xl font-bold mb-4 drop-shadow-lg">
-              {pooja.title.toUpperCase()}
-            </h1>
-            <p className="text-xl md:text-2xl opacity-90">Sacred Ritual • Divine Blessings</p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Simple Header */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <Button
+              variant="ghost"
+              onClick={() => navigate(-1)}
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleLike}
+              >
+                <Heart className={`h-5 w-5 ${isLiked ? 'fill-red-500 text-red-500' : 'text-gray-600'}`} />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleShare}
+              >
+                <Share2 className="h-5 w-5 text-gray-600" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-12">
+      <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Image Gallery */}
+          {/* Left Column - Image Gallery & Details */}
           <div className="lg:col-span-2">
-            <Card className="overflow-hidden shadow-xl">
+            {/* Title & Rating */}
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-2xl">🕉️</span>
+                <Badge variant="secondary" className="bg-green-100 text-green-800">
+                  Available Today
+                </Badge>
+              </div>
+              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+                {pooja.title}
+              </h1>
+              <div className="flex items-center gap-4 text-sm text-gray-600">
+                <div className="flex items-center gap-1">
+                  <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                  <span className="font-medium">4.8</span>
+                  <span>(256 reviews)</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Clock className="h-4 w-4 text-orange-500" />
+                  <span>2-3 hours</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <MapPin className="h-4 w-4 text-orange-500" />
+                  <span>At your location</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Image Gallery */}
+            <Card className="overflow-hidden shadow-lg mb-6">
               <div className="relative">
                 <img 
                   src={galleryImages[selectedImage]} 
                   alt={pooja.title} 
-                  className="w-full h-96 object-cover transition-all duration-300"
+                  className="w-full h-80 object-cover"
                 />
-                <div className="absolute top-4 right-4 flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="bg-white/90 hover:bg-white"
-                    onClick={handleLike}
-                  >
-                    <Heart className={`h-4 w-4 ${isLiked ? 'fill-red-500 text-red-500' : 'text-gray-600'}`} />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="bg-white/90 hover:bg-white"
-                    onClick={handleShare}
-                  >
-                    <Share2 className="h-4 w-4 text-gray-600" />
-                  </Button>
-                </div>
               </div>
-              
-              {/* Thumbnail Gallery */}
               <div className="p-4 flex gap-2">
                 {galleryImages.map((img, index) => (
                   <button
                     key={index}
                     onClick={() => setSelectedImage(index)}
-                    className={`w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${
+                    className={`w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
                       selectedImage === index ? 'border-orange-500' : 'border-gray-200'
                     }`}
                   >
@@ -151,76 +178,66 @@ export default function PoojaDetailPage() {
               </div>
             </Card>
 
-            {/* Description & Details */}
-            <Card className="mt-6 shadow-lg">
+            {/* Description */}
+            <Card className="shadow-lg mb-6">
               <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <Star className="h-5 w-5 text-yellow-500 fill-current" />
-                    <span className="text-sm font-medium">4.8 (256 reviews)</span>
-                  </div>
-                  <Badge variant="secondary" className="bg-green-100 text-green-800">
-                    Available Today
-                  </Badge>
-                </div>
-                
-                <h2 className="text-2xl font-bold mb-4 text-gray-800">About This Pooja</h2>
-                <p className="text-gray-700 mb-6 leading-relaxed text-lg">
+                <h2 className="text-xl font-bold mb-4 text-gray-900">About This Pooja</h2>
+                <p className="text-gray-700 mb-4 leading-relaxed">
                   {pooja.description}
                 </p>
                 
                 {pooja.details && (
-                  <div className="bg-orange-50 p-4 rounded-lg mb-6 border-l-4 border-orange-500">
-                    <h3 className="font-semibold text-orange-800 mb-2">Additional Information</h3>
+                  <div className="bg-orange-50 p-4 rounded-lg border-l-4 border-orange-500">
                     <p className="text-orange-700 text-sm">{pooja.details}</p>
                   </div>
                 )}
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-                  {/* Benefits */}
-                  <div>
-                    <h3 className="font-bold text-lg mb-3 text-gray-800 flex items-center gap-2">
-                      <Star className="h-5 w-5 text-yellow-500" />
-                      Benefits
-                    </h3>
-                    <ul className="space-y-2">
-                      {benefits.map((benefit, index) => (
-                        <li key={index} className="flex items-start gap-2 text-sm text-gray-600">
-                          <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
-                          {benefit}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  {/* Requirements */}
-                  <div>
-                    <h3 className="font-bold text-lg mb-3 text-gray-800 flex items-center gap-2">
-                      <Clock className="h-5 w-5 text-blue-500" />
-                      Requirements
-                    </h3>
-                    <ul className="space-y-2">
-                      {requirements.map((requirement, index) => (
-                        <li key={index} className="flex items-start gap-2 text-sm text-gray-600">
-                          <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                          {requirement}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
               </CardContent>
             </Card>
+
+            {/* Benefits & Requirements */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card className="shadow-lg">
+                <CardContent className="p-6">
+                  <h3 className="font-bold text-lg mb-4 text-gray-900 flex items-center gap-2">
+                    <Star className="h-5 w-5 text-yellow-500" />
+                    Benefits
+                  </h3>
+                  <ul className="space-y-3">
+                    {benefits.map((benefit, index) => (
+                      <li key={index} className="flex items-start gap-3 text-sm text-gray-600">
+                        <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
+                        <span>{benefit}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-lg">
+                <CardContent className="p-6">
+                  <h3 className="font-bold text-lg mb-4 text-gray-900 flex items-center gap-2">
+                    <Clock className="h-5 w-5 text-blue-500" />
+                    Requirements
+                  </h3>
+                  <ul className="space-y-3">
+                    {requirements.map((requirement, index) => (
+                      <li key={index} className="flex items-start gap-3 text-sm text-gray-600">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                        <span>{requirement}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            </div>
           </div>
 
           {/* Right Column - Booking Card */}
           <div className="lg:col-span-1">
-            <Card className="sticky top-4 shadow-xl border-0 bg-gradient-to-br from-white to-orange-50">
+            <Card className="sticky top-4 shadow-lg border border-gray-200">
               <CardContent className="p-6">
                 <div className="text-center mb-6">
-                  <div className="text-4xl mb-2">🕉️</div>
-                  <h3 className="text-2xl font-bold text-gray-800 mb-2">{pooja.title}</h3>
-                  <div className="text-3xl font-bold text-green-600 mb-1">₹{pooja.price}</div>
+                  <div className="text-3xl font-bold text-green-600 mb-2">₹{pooja.price}</div>
                   <p className="text-sm text-gray-500">Starting price</p>
                 </div>
 
@@ -247,7 +264,7 @@ export default function PoojaDetailPage() {
                 {/* Action Buttons */}
                 <div className="space-y-3">
                   <Button
-                    className="w-full bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-semibold py-3 text-lg shadow-lg"
+                    className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 text-lg"
                     size="lg"
                     onClick={() => navigate(`/credentials/${pooja.id}`)}
                   >
@@ -296,7 +313,7 @@ export default function PoojaDetailPage() {
                   onClick={handleCallNow}
                 >
                   <Phone className="h-4 w-4 mr-2" />
-                  Call +91 98765 43210
+                  Call +91 88794 66037 
                 </Button>
               </CardContent>
             </Card>
@@ -307,7 +324,7 @@ export default function PoojaDetailPage() {
         <div className="mt-12 text-center">
           <Link 
             to="/services" 
-            className="inline-flex items-center gap-2 text-orange-600 hover:text-orange-700 font-medium text-lg underline-offset-4 hover:underline transition-colors"
+            className="inline-flex items-center gap-2 text-orange-600 hover:text-orange-700 font-medium underline-offset-4 hover:underline transition-colors"
           >
             ← Back to All Services
           </Link>
