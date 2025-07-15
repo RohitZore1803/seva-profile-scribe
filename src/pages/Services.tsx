@@ -1,5 +1,4 @@
-
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Filter, Star, Clock, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
 
 interface Service {
   id: number;
@@ -22,32 +20,51 @@ interface Service {
   created_at: string;
 }
 
+// Custom toast hook fallback
+const useToast = () => {
+  return {
+    toast: ({ title, description, variant }: { title: string; description: string; variant?: string }) => {
+      console.log(`${variant === 'destructive' ? 'ERROR' : 'INFO'}: ${title} - ${description}`);
+      // You can replace this with your preferred notification system
+      alert(`${title}: ${description}`);
+    }
+  };
+};
+
 export default function ServicesPage() {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [priceFilter, setPriceFilter] = useState<string>("");
   const [durationFilter, setDurationFilter] = useState<string>("");
-  const [filteredServices, setFilteredServices] = useState<Service[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchServices();
   }, []);
 
-  useEffect(() => {
-    // Filter services based on search term, price, and duration
+  // Memoized filtered services for better performance
+  const filteredServices = useMemo(() => {
     let filtered = services;
 
-    if (searchTerm) {
-      filtered = filtered.filter(service =>
-        service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        service.description?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+    // Search filter
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase().trim();
+      filtered = filtered.filter(service => {
+        const nameMatch = service.name?.toLowerCase().includes(searchLower) || false;
+        const descriptionMatch = service.description?.toLowerCase().includes(searchLower) || false;
+        return nameMatch || descriptionMatch;
+      });
     }
 
+    // Price filter
     if (priceFilter) {
       filtered = filtered.filter(service => {
-        if (!service.price) return false;
+        // Handle null/undefined prices
+        if (service.price === null || service.price === undefined) return false;
+        
         const priceInRupees = service.price / 100;
         switch (priceFilter) {
           case "budget":
@@ -62,9 +79,12 @@ export default function ServicesPage() {
       });
     }
 
+    // Duration filter
     if (durationFilter) {
       filtered = filtered.filter(service => {
-        if (!service.duration_hours) return false;
+        // Handle null/undefined duration
+        if (service.duration_hours === null || service.duration_hours === undefined) return false;
+        
         switch (durationFilter) {
           case "short":
             return service.duration_hours <= 2;
@@ -78,20 +98,27 @@ export default function ServicesPage() {
       });
     }
 
-    setFilteredServices(filtered);
+    return filtered;
   }, [searchTerm, priceFilter, durationFilter, services]);
 
   const fetchServices = async () => {
     try {
+      setError(null);
+      setLoading(true);
+      
       const { data, error } = await supabase
         .from("services")
         .select("*")
         .order("name");
 
       if (error) throw error;
+      
       setServices(data || []);
     } catch (error) {
       console.error("Error fetching services:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      setError(errorMessage);
+      
       toast({
         title: "Error",
         description: "Failed to load services. Please try again.",
@@ -103,12 +130,15 @@ export default function ServicesPage() {
   };
 
   const formatPrice = (priceInPaise: number | null) => {
-    if (!priceInPaise) return "Contact for price";
+    if (priceInPaise === null || priceInPaise === undefined) return "Contact for price";
+    if (priceInPaise === 0) return "Free";
     return `₹${(priceInPaise / 100).toLocaleString()}`;
   };
 
   const getPriceCategory = (priceInPaise: number | null) => {
-    if (!priceInPaise) return "contact";
+    if (priceInPaise === null || priceInPaise === undefined) return "contact";
+    if (priceInPaise === 0) return "free";
+    
     const price = priceInPaise / 100;
     if (price < 2000) return "budget";
     if (price < 5000) return "standard";
@@ -117,8 +147,9 @@ export default function ServicesPage() {
 
   const getPriceBadgeColor = (category: string) => {
     switch (category) {
-      case "budget": return "bg-green-100 text-green-800";
-      case "standard": return "bg-blue-100 text-blue-800";
+      case "free": return "bg-green-100 text-green-800";
+      case "budget": return "bg-blue-100 text-blue-800";
+      case "standard": return "bg-yellow-100 text-yellow-800";
       case "premium": return "bg-purple-100 text-purple-800";
       default: return "bg-gray-100 text-gray-800";
     }
@@ -130,6 +161,36 @@ export default function ServicesPage() {
     setDurationFilter("");
   };
 
+  const getDurationDisplay = (hours: number | null) => {
+    if (hours === null || hours === undefined) return "Duration varies";
+    if (hours === 0) return "Quick service";
+    return `${hours} ${hours === 1 ? 'hr' : 'hrs'}`;
+  };
+
+  // Error state
+  if (error && !loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50">
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <div className="text-6xl mb-4">⚠️</div>
+              <h2 className="text-2xl font-bold text-red-600 mb-4">Error Loading Services</h2>
+              <p className="text-gray-600 mb-4">{error}</p>
+              <Button 
+                onClick={fetchServices}
+                className="bg-orange-600 hover:bg-orange-700 text-white"
+              >
+                Try Again
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Loading state
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50">
@@ -167,6 +228,7 @@ export default function ServicesPage() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 pr-4 py-3 text-lg border-2 border-orange-200 focus:border-orange-400 bg-white/80 backdrop-blur-sm"
+                aria-label="Search services"
               />
             </div>
             
@@ -178,24 +240,24 @@ export default function ServicesPage() {
               </div>
               
               <Select value={priceFilter} onValueChange={setPriceFilter}>
-                <SelectTrigger className="w-40 bg-white/80">
+                <SelectTrigger className="w-40 bg-white/80" aria-label="Filter by price range">
                   <SelectValue placeholder="Price Range" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="budget">Budget (< ₹2,000)</SelectItem>
+                  <SelectItem value="budget">Budget (&lt; ₹2,000)</SelectItem>
                   <SelectItem value="standard">Standard (₹2,000-5,000)</SelectItem>
-                  <SelectItem value="premium">Premium (> ₹5,000)</SelectItem>
+                  <SelectItem value="premium">Premium (&gt; ₹5,000)</SelectItem>
                 </SelectContent>
               </Select>
 
               <Select value={durationFilter} onValueChange={setDurationFilter}>
-                <SelectTrigger className="w-40 bg-white/80">
+                <SelectTrigger className="w-40 bg-white/80" aria-label="Filter by duration">
                   <SelectValue placeholder="Duration" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="short">Short (≤ 2 hours)</SelectItem>
                   <SelectItem value="medium">Medium (2-4 hours)</SelectItem>
-                  <SelectItem value="long">Long (> 4 hours)</SelectItem>
+                  <SelectItem value="long">Long (&gt; 4 hours)</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -204,6 +266,7 @@ export default function ServicesPage() {
                   variant="outline" 
                   onClick={clearFilters}
                   className="border-orange-200 text-orange-600 hover:bg-orange-50"
+                  aria-label="Clear all filters"
                 >
                   Clear Filters
                 </Button>
@@ -239,14 +302,19 @@ export default function ServicesPage() {
                   {service.image ? (
                     <img 
                       src={service.image} 
-                      alt={service.name}
+                      alt={service.name || "Service image"}
                       className="w-full h-48 object-cover"
+                      onError={(e) => {
+                        // Fallback if image fails to load
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        target.nextElementSibling?.classList.remove('hidden');
+                      }}
                     />
-                  ) : (
-                    <div className="w-full h-48 bg-gradient-to-br from-orange-200 to-amber-200 flex items-center justify-center">
-                      <span className="text-5xl">🕉️</span>
-                    </div>
-                  )}
+                  ) : null}
+                  <div className={`w-full h-48 bg-gradient-to-br from-orange-200 to-amber-200 flex items-center justify-center ${service.image ? 'hidden' : ''}`}>
+                    <span className="text-5xl">🕉️</span>
+                  </div>
                   
                   {/* Price Badge */}
                   <div className="absolute top-3 right-3">
@@ -264,13 +332,15 @@ export default function ServicesPage() {
                 </div>
                 
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-xl text-orange-700 mb-2 line-clamp-2">
-                    {service.name}
+                  <CardTitle className="text-xl text-orange-700 mb-2 overflow-hidden text-ellipsis">
+                    <span className="line-clamp-2 block">
+                      {service.name || "Untitled Service"}
+                    </span>
                   </CardTitle>
                   <div className="flex items-center gap-3 text-sm text-gray-500">
                     <div className="flex items-center gap-1">
                       <Clock className="w-4 h-4" />
-                      <span>{service.duration_hours || 2} hrs</span>
+                      <span>{getDurationDisplay(service.duration_hours)}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <MapPin className="w-4 h-4" />
@@ -279,13 +349,15 @@ export default function ServicesPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="pt-0">
-                  <CardDescription className="text-gray-600 mb-4 text-sm leading-relaxed line-clamp-3">
-                    {service.description || "Traditional pooja service performed with authentic rituals and proper arrangements."}
+                  <CardDescription className="text-gray-600 mb-4 text-sm leading-relaxed">
+                    <span className="line-clamp-3 block">
+                      {service.description || "Traditional pooja service performed with authentic rituals and proper arrangements."}
+                    </span>
                   </CardDescription>
                   
                   {/* Rating */}
                   <div className="flex items-center gap-2 mb-4">
-                    <div className="flex text-yellow-400">
+                    <div className="flex text-yellow-400" role="img" aria-label="5 star rating">
                       {[...Array(5)].map((_, i) => (
                         <Star key={i} className="w-3 h-3 fill-current" />
                       ))}
