@@ -14,45 +14,98 @@ export type Database = {
   }
   public: {
     Tables: {
+      booking_materials: {
+        Row: {
+          booking_id: string | null
+          created_at: string
+          id: string
+          material_name: string
+          provided_by: string | null
+          quantity: number | null
+        }
+        Insert: {
+          booking_id?: string | null
+          created_at?: string
+          id?: string
+          material_name: string
+          provided_by?: string | null
+          quantity?: number | null
+        }
+        Update: {
+          booking_id?: string | null
+          created_at?: string
+          id?: string
+          material_name?: string
+          provided_by?: string | null
+          quantity?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_materials_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
           address: string | null
           assigned_at: string | null
+          booking_notes: string | null
           created_at: string
           created_by: string
+          duration_hours: number | null
           fromdate: string
           id: string
           location: string | null
           pandit_id: string | null
+          phone: string | null
+          preferred_time: string | null
           service_id: number | null
+          special_requirements: string | null
           status: string | null
           todate: string
+          total_amount: number | null
         }
         Insert: {
           address?: string | null
           assigned_at?: string | null
+          booking_notes?: string | null
           created_at?: string
           created_by: string
+          duration_hours?: number | null
           fromdate: string
           id?: string
           location?: string | null
           pandit_id?: string | null
+          phone?: string | null
+          preferred_time?: string | null
           service_id?: number | null
+          special_requirements?: string | null
           status?: string | null
           todate: string
+          total_amount?: number | null
         }
         Update: {
           address?: string | null
           assigned_at?: string | null
+          booking_notes?: string | null
           created_at?: string
           created_by?: string
+          duration_hours?: number | null
           fromdate?: string
           id?: string
           location?: string | null
           pandit_id?: string | null
+          phone?: string | null
+          preferred_time?: string | null
           service_id?: number | null
+          special_requirements?: string | null
           status?: string | null
           todate?: string
+          total_amount?: number | null
         }
         Relationships: [
           {
@@ -126,28 +179,37 @@ export type Database = {
       }
       services: {
         Row: {
+          benefits: string | null
           created_at: string
           description: string | null
+          duration_hours: number | null
           id: number
           image: string | null
           name: string
           price: number | null
+          requirements: string | null
         }
         Insert: {
+          benefits?: string | null
           created_at?: string
           description?: string | null
+          duration_hours?: number | null
           id?: number
           image?: string | null
           name: string
           price?: number | null
+          requirements?: string | null
         }
         Update: {
+          benefits?: string | null
           created_at?: string
           description?: string | null
+          duration_hours?: number | null
           id?: number
           image?: string | null
           name?: string
           price?: number | null
+          requirements?: string | null
         }
         Relationships: []
       }

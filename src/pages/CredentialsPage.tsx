@@ -1,3 +1,4 @@
+
 import * as React from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { format } from "date-fns";
@@ -23,8 +24,7 @@ export default function CredentialsPage() {
 
   const handleSubmit = async (data: CredentialsFormValues) => {
     console.log('[Booking DEBUG] Starting booking submission');
-    console.log('[Booking DEBUG] User:', { id: user?.id, typeof_user_id: typeof user?.id });
-    console.log('[Booking DEBUG] Service ID param:', { raw_param_id: id, typeof_param_id: typeof id });
+    console.log('[Booking DEBUG] Form data:', data);
 
     if (!user || !user.id) {
       toast({
@@ -75,7 +75,7 @@ export default function CredentialsPage() {
       // Verify service exists using integer ID
       const { data: existingService, error: serviceError } = await supabase
         .from("services")
-        .select("id, name")
+        .select("id, name, price")
         .eq("id", serviceIdAsNumber)
         .single();
 
@@ -86,7 +86,7 @@ export default function CredentialsPage() {
 
       console.log('[Booking DEBUG] Creating booking in database');
 
-      // Create booking in database with fromdate and todate
+      // Create booking in database with enhanced data
       const bookingData = {
         created_by: user.id,
         service_id: serviceIdAsNumber,
@@ -94,6 +94,11 @@ export default function CredentialsPage() {
         todate: data.toDate.toISOString(),
         location: data.location,
         address: data.address,
+        phone: data.phone,
+        preferred_time: data.preferredTime,
+        duration_hours: data.durationHours,
+        special_requirements: data.specialRequirements || null,
+        total_amount: existingService.price,
         status: "pending",
       };
 
@@ -119,8 +124,13 @@ export default function CredentialsPage() {
         customer_email: user.email,
         from_date: format(data.fromDate, "yyyy-MM-dd"),
         to_date: format(data.toDate, "yyyy-MM-dd"),
+        preferred_time: data.preferredTime,
+        duration_hours: data.durationHours,
         location: data.location,
         address: data.address,
+        phone: data.phone,
+        special_requirements: data.specialRequirements,
+        total_amount: existingService.price,
         status: "pending",
         created_at: new Date().toISOString(),
       };
@@ -132,15 +142,16 @@ export default function CredentialsPage() {
       localStorage.setItem('recentBookings', JSON.stringify(existingBookings.slice(0, 10)));
 
       toast({
-        title: "🎉 Booking Submitted Successfully!",
+        title: "🎉 Booking Confirmed Successfully!",
         description: (
           <div className="text-left space-y-2">
             <div><strong>Service:</strong> {existingService.name}</div>
-            <div><strong>From:</strong> {format(data.fromDate, "PPP")}</div>
-            <div><strong>To:</strong> {format(data.toDate, "PPP")}</div>
+            <div><strong>Date:</strong> {format(data.fromDate, "PPP")} to {format(data.toDate, "PPP")}</div>
+            <div><strong>Time:</strong> {data.preferredTime}</div>
+            <div><strong>Duration:</strong> {data.durationHours} hours</div>
             <div><strong>Location:</strong> {data.location}</div>
             <div className="text-sm text-green-600 mt-2">
-              📧 Confirmation email sent to your registered email
+              📧 Confirmation details sent to your email
             </div>
           </div>
         ),
@@ -148,7 +159,7 @@ export default function CredentialsPage() {
 
       setTimeout(() => {
         navigate(`/product/${id}`);
-      }, 1200);
+      }, 2000);
 
     } catch (error: any) {
       console.error('[Booking submission error]:', error);
@@ -178,20 +189,12 @@ export default function CredentialsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 flex flex-col items-center justify-start py-10 px-2">
-      <div className="bg-white/90 backdrop-blur-sm max-w-2xl w-full rounded-2xl shadow-2xl p-8 border-0">
-        <div className="text-center mb-8">
-          <div className="text-6xl mb-4">📿</div>
-          <h1 className="text-3xl font-extrabold mb-2 text-orange-700">
-            Complete Your Booking
-          </h1>
-          <p className="text-gray-600 text-lg">
-            Select dates and location for your pooja service
-          </p>
-        </div>
-        
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 py-12 px-4">
+      <div className="max-w-4xl mx-auto">
         <ProfileSummary profile={profile} loading={loadingProfile} />
-        <CredentialsForm onSubmit={handleSubmit} loading={loading} serviceId={id} />
+        <div className="mt-8">
+          <CredentialsForm onSubmit={handleSubmit} loading={loading} serviceId={id} />
+        </div>
       </div>
     </div>
   );
