@@ -182,7 +182,7 @@ export default function AuthPage() {
         <CardHeader className="text-center pb-6">
           <div className="text-6xl mb-4">🕉️</div>
           <CardTitle className="text-3xl font-bold text-orange-800">
-            Welcome to PoojaConnect
+            Welcome to E-GURUji
           </CardTitle>
           <CardDescription className="text-lg text-gray-600">
             Connect with authentic spiritual services
