@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -10,7 +9,8 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/hooks/useSession";
-import { Eye, EyeOff, Mail, Lock, User, MapPin, Award, FileText } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, MapPin, Award, FileText, Phone } from "lucide-react";
+import OTPVerification from "@/components/OTPVerification";
 
 export default function AuthPage() {
   const navigate = useNavigate();
@@ -18,6 +18,8 @@ export default function AuthPage() {
   const { user, loading } = useSession();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showOTPVerification, setShowOTPVerification] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState("");
   
   const defaultRole = searchParams.get("role") || "customer";
   const [selectedRole, setSelectedRole] = useState<"customer" | "pandit">(
@@ -33,6 +35,7 @@ export default function AuthPage() {
     name: "",
     email: "",
     password: "",
+    phone: "",
     address: "",
     expertise: "",
     aadhar_number: "",
@@ -40,7 +43,6 @@ export default function AuthPage() {
 
   useEffect(() => {
     if (user && !loading) {
-      // Redirect authenticated users to appropriate dashboard
       navigate("/dashboard-customer");
     }
   }, [user, loading, navigate]);
@@ -123,7 +125,7 @@ export default function AuthPage() {
     try {
       const redirectUrl = `${window.location.origin}/`;
       
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: signupForm.email,
         password: signupForm.password,
         options: {
@@ -131,6 +133,7 @@ export default function AuthPage() {
           data: {
             name: signupForm.name,
             user_type: selectedRole,
+            phone: signupForm.phone,
             address: signupForm.address,
             ...(selectedRole === "pandit" && {
               expertise: signupForm.expertise,
@@ -149,10 +152,19 @@ export default function AuthPage() {
         return;
       }
 
-      toast({
-        title: "Account Created!",
-        description: "Please check your email to verify your account.",
-      });
+      if (data.user && !data.user.email_confirmed_at) {
+        setVerificationEmail(signupForm.email);
+        setShowOTPVerification(true);
+        toast({
+          title: "Account Created!",
+          description: "Please check your email for verification code.",
+        });
+      } else {
+        toast({
+          title: "Account Created!",
+          description: "Your account has been created successfully.",
+        });
+      }
     } catch (error) {
       console.error("Signup error:", error);
       toast({
@@ -165,33 +177,54 @@ export default function AuthPage() {
     }
   };
 
+  const handleVerificationComplete = () => {
+    setShowOTPVerification(false);
+    navigate("/dashboard-customer");
+  };
+
+  const handleBackToSignup = () => {
+    setShowOTPVerification(false);
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <p className="text-gray-600 dark:text-gray-300">Loading...</p>
         </div>
       </div>
     );
   }
 
+  if (showOTPVerification) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+        <OTPVerification
+          email={verificationEmail}
+          onVerificationComplete={handleVerificationComplete}
+          onBack={handleBackToSignup}
+        />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-lg bg-white/90 backdrop-blur-sm shadow-2xl border-0">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+      <Card className="w-full max-w-lg bg-white/90 dark:bg-gray-950/90 backdrop-blur-sm shadow-2xl border-0">
         <CardHeader className="text-center pb-6">
           <div className="text-6xl mb-4">🕉️</div>
-          <CardTitle className="text-3xl font-bold text-orange-800">
+          <CardTitle className="text-3xl font-bold text-orange-800 dark:text-orange-400">
             Welcome to E-GURUji
           </CardTitle>
-          <CardDescription className="text-lg text-gray-600">
+          <CardDescription className="text-lg text-gray-600 dark:text-gray-300">
             Connect with authentic spiritual services
           </CardDescription>
         </CardHeader>
         
         <CardContent>
           <Tabs defaultValue="login" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 bg-orange-100">
+            <TabsList className="grid w-full grid-cols-2 bg-orange-100 dark:bg-orange-900">
               <TabsTrigger value="login" className="data-[state=active]:bg-orange-600 data-[state=active]:text-white">
                 Sign In
               </TabsTrigger>
@@ -251,7 +284,7 @@ export default function AuthPage() {
                   <Separator />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-white px-2 text-gray-500">Or continue with</span>
+                  <span className="bg-white dark:bg-gray-950 px-2 text-gray-500">Or continue with</span>
                 </div>
               </div>
 
@@ -260,7 +293,7 @@ export default function AuthPage() {
                 variant="outline"
                 onClick={handleGoogleAuth}
                 disabled={isLoading}
-                className="w-full border-2 border-orange-200 hover:bg-orange-50"
+                className="w-full border-2 border-orange-200 hover:bg-orange-50 dark:border-orange-700 dark:hover:bg-orange-900"
               >
                 <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                   <path
@@ -292,7 +325,7 @@ export default function AuthPage() {
                     type="button"
                     variant={selectedRole === "customer" ? "default" : "outline"}
                     onClick={() => setSelectedRole("customer")}
-                    className={selectedRole === "customer" ? "bg-orange-600 hover:bg-orange-700" : "border-orange-200 hover:bg-orange-50"}
+                    className={selectedRole === "customer" ? "bg-orange-600 hover:bg-orange-700" : "border-orange-200 hover:bg-orange-50 dark:border-orange-700 dark:hover:bg-orange-900"}
                   >
                     <User className="w-4 h-4 mr-2" />
                     Customer
@@ -301,7 +334,7 @@ export default function AuthPage() {
                     type="button"
                     variant={selectedRole === "pandit" ? "default" : "outline"}
                     onClick={() => setSelectedRole("pandit")}
-                    className={selectedRole === "pandit" ? "bg-orange-600 hover:bg-orange-700" : "border-orange-200 hover:bg-orange-50"}
+                    className={selectedRole === "pandit" ? "bg-orange-600 hover:bg-orange-700" : "border-orange-200 hover:bg-orange-50 dark:border-orange-700 dark:hover:bg-orange-900"}
                   >
                     <Award className="w-4 h-4 mr-2" />
                     Pandit
@@ -335,6 +368,22 @@ export default function AuthPage() {
                       placeholder="Enter your email"
                       value={signupForm.email}
                       onChange={(e) => setSignupForm({...signupForm, email: e.target.value})}
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="signup-phone">Mobile Number</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <Input
+                      id="signup-phone"
+                      type="tel"
+                      placeholder="Enter your mobile number"
+                      value={signupForm.phone}
+                      onChange={(e) => setSignupForm({...signupForm, phone: e.target.value})}
                       className="pl-10"
                       required
                     />
@@ -421,7 +470,7 @@ export default function AuthPage() {
                   <Separator />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-white px-2 text-gray-500">Or continue with</span>
+                  <span className="bg-white dark:bg-gray-950 px-2 text-gray-500">Or continue with</span>
                 </div>
               </div>
 
@@ -430,7 +479,7 @@ export default function AuthPage() {
                 variant="outline"
                 onClick={handleGoogleAuth}
                 disabled={isLoading}
-                className="w-full border-2 border-orange-200 hover:bg-orange-50"
+                className="w-full border-2 border-orange-200 hover:bg-orange-50 dark:border-orange-700 dark:hover:bg-orange-900"
               >
                 <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                   <path

@@ -144,6 +144,39 @@ export type Database = {
         }
         Relationships: []
       }
+      feedback: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          message: string
+          name: string
+          rating: number | null
+          subject: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          message: string
+          name: string
+          rating?: number | null
+          subject?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          rating?: number | null
+          subject?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       pandit_profiles: {
         Row: {
           aadhar_number: string
@@ -174,6 +207,48 @@ export type Database = {
           id?: string
           name?: string
           profile_image_url?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          aadhar_number: string | null
+          address: string | null
+          created_at: string
+          email: string
+          expertise: string | null
+          id: string
+          is_verified: boolean | null
+          name: string
+          profile_image_url: string | null
+          updated_at: string
+          user_type: string
+        }
+        Insert: {
+          aadhar_number?: string | null
+          address?: string | null
+          created_at?: string
+          email: string
+          expertise?: string | null
+          id: string
+          is_verified?: boolean | null
+          name: string
+          profile_image_url?: string | null
+          updated_at?: string
+          user_type?: string
+        }
+        Update: {
+          aadhar_number?: string | null
+          address?: string | null
+          created_at?: string
+          email?: string
+          expertise?: string | null
+          id?: string
+          is_verified?: boolean | null
+          name?: string
+          profile_image_url?: string | null
+          updated_at?: string
+          user_type?: string
         }
         Relationships: []
       }

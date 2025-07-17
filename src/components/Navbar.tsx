@@ -1,4 +1,3 @@
-
 import { Link, useLocation } from "react-router-dom";
 import { useSession } from "@/hooks/useSession";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -6,6 +5,7 @@ import { LogIn, User, Menu, LogOut } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -41,22 +41,20 @@ const Navbar = () => {
     if (user) {
       const fetchUserType = async () => {
         try {
-          // Check both profile tables to determine user type
-          const [customerProfile, panditProfile] = await Promise.all([
-            supabase.from("customer_profiles").select("id").eq("id", user.id).single(),
-            supabase.from("pandit_profiles").select("id").eq("id", user.id).single()
-          ]);
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("user_type")
+            .eq("id", user.id)
+            .single();
           
-          if (customerProfile.data) {
-            setUserType("customer");
-          } else if (panditProfile.data) {
-            setUserType("pandit");
+          if (profile) {
+            setUserType(profile.user_type);
           } else {
-            setUserType("customer"); // default fallback
+            setUserType("customer");
           }
         } catch (error) {
           console.error("Error fetching user type:", error);
-          setUserType("customer"); // default fallback
+          setUserType("customer");
         }
       };
       
@@ -88,12 +86,12 @@ const Navbar = () => {
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
         <button className="md:hidden p-2">
-          <Menu size={24} className="text-orange-600" />
+          <Menu size={24} className="text-orange-600 dark:text-orange-400" />
         </button>
       </SheetTrigger>
       <SheetContent side="left" className="w-80">
         <SheetHeader>
-          <SheetTitle className="text-orange-600 font-playfair text-xl">E-GURUJI</SheetTitle>
+          <SheetTitle className="text-orange-600 dark:text-orange-400 font-playfair text-xl">E-GURUJI</SheetTitle>
         </SheetHeader>
         <nav className="flex flex-col gap-4 mt-8">
           {navItems.map((item) => (
@@ -103,20 +101,24 @@ const Navbar = () => {
               onClick={() => setIsOpen(false)}
               className={`text-lg py-3 px-4 rounded-lg transition-colors ${
                 location.pathname === item.href
-                  ? "bg-orange-100 text-orange-700 font-semibold"
-                  : "text-gray-600 hover:text-orange-600 hover:bg-orange-50"
+                  ? "bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 font-semibold"
+                  : "text-gray-600 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900"
               }`}
             >
               {item.name}
             </Link>
           ))}
           <div className="border-t pt-4 mt-4">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-sm text-gray-600 dark:text-gray-400">Theme</span>
+              <ThemeToggle />
+            </div>
             {!user ? (
               <div className="flex flex-col gap-3">
                 <Link
                   to="/auth?role=customer"
                   onClick={() => setIsOpen(false)}
-                  className="flex items-center gap-2 text-sm bg-orange-50 px-4 py-3 rounded-lg hover:bg-orange-100"
+                  className="flex items-center gap-2 text-sm bg-orange-50 dark:bg-orange-900 px-4 py-3 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-800"
                 >
                   <User size={16} />
                   Customer Login
@@ -124,15 +126,15 @@ const Navbar = () => {
                 <Link
                   to="/auth?role=pandit"
                   onClick={() => setIsOpen(false)}
-                  className="flex items-center gap-2 text-sm bg-orange-50 px-4 py-3 rounded-lg hover:bg-orange-100"
+                  className="flex items-center gap-2 text-sm bg-orange-50 dark:bg-orange-900 px-4 py-3 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-800"
                 >
                   <LogIn size={16} />
                   Pandit Login
                 </Link>
                 <Link
-                  to="/auth?role=admin"
+                  to="/admin-auth"
                   onClick={() => setIsOpen(false)}
-                  className="flex items-center gap-2 text-sm bg-red-50 px-4 py-3 rounded-lg hover:bg-red-100 text-red-700"
+                  className="flex items-center gap-2 text-sm bg-red-50 dark:bg-red-900 px-4 py-3 rounded-lg hover:bg-red-100 dark:hover:bg-red-800 text-red-700 dark:text-red-300"
                 >
                   <LogIn size={16} />
                   Admin Login
@@ -143,7 +145,7 @@ const Navbar = () => {
                 <Link
                   to={getDashboardUrl()}
                   onClick={() => setIsOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-orange-50"
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-900"
                 >
                   <Avatar className="w-8 h-8">
                     <AvatarImage src={user.user_metadata?.profile_image_url} alt={user.user_metadata?.name || "avatar"} />
@@ -156,7 +158,7 @@ const Navbar = () => {
                     setIsOpen(false);
                     handleLogout();
                   }}
-                  className="flex items-center gap-2 text-sm bg-red-50 px-4 py-3 rounded-lg hover:bg-red-100 text-red-700"
+                  className="flex items-center gap-2 text-sm bg-red-50 dark:bg-red-900 px-4 py-3 rounded-lg hover:bg-red-100 dark:hover:bg-red-800 text-red-700 dark:text-red-300"
                 >
                   <LogOut size={16} />
                   Sign Out
@@ -179,8 +181,8 @@ const Navbar = () => {
                 to={item.href}
                 className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                   location.pathname === item.href
-                    ? "bg-orange-100 text-orange-700"
-                    : "text-gray-600 hover:text-orange-600 hover:bg-orange-50"
+                    ? "bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300"
+                    : "text-gray-600 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900"
                 }`}
               >
                 {item.name}
@@ -193,10 +195,10 @@ const Navbar = () => {
   );
 
   return (
-    <nav className="w-full bg-white shadow px-4 py-3 flex items-center justify-between sticky top-0 z-30">
+    <nav className="w-full bg-white dark:bg-gray-950 shadow border-b dark:border-gray-800 px-4 py-3 flex items-center justify-between sticky top-0 z-30">
       <div className="flex items-center gap-4">
         <Link to="/" className="flex items-center gap-2">
-          <span className="text-2xl font-bold text-orange-600 font-playfair tracking-wide">
+          <span className="text-2xl font-bold text-orange-600 dark:text-orange-400 font-playfair tracking-wide">
             E-GURUJI
           </span>
         </Link>
@@ -204,17 +206,18 @@ const Navbar = () => {
       </div>
 
       <div className="flex items-center gap-3">
+        {!isMobile && <ThemeToggle />}
         {!user && !isMobile ? (
           <>
-            <Link to="/auth?role=customer" className="flex gap-1 items-center text-sm hover:text-orange-700 bg-orange-50 px-3 py-2 rounded-md">
+            <Link to="/auth?role=customer" className="flex gap-1 items-center text-sm hover:text-orange-700 dark:hover:text-orange-300 bg-orange-50 dark:bg-orange-900 px-3 py-2 rounded-md">
               <User size={16} />
               Customer Login
             </Link>
-            <Link to="/auth?role=pandit" className="flex gap-1 items-center text-sm hover:text-orange-700 bg-orange-50 px-3 py-2 rounded-md">
+            <Link to="/auth?role=pandit" className="flex gap-1 items-center text-sm hover:text-orange-700 dark:hover:text-orange-300 bg-orange-50 dark:bg-orange-900 px-3 py-2 rounded-md">
               <LogIn size={16} />
               Pandit Login
             </Link>
-            <Link to="/auth?role=admin" className="flex gap-1 items-center text-sm hover:text-red-700 bg-red-50 px-3 py-2 rounded-md text-red-600">
+            <Link to="/admin-auth" className="flex gap-1 items-center text-sm hover:text-red-700 dark:hover:text-red-300 bg-red-50 dark:bg-red-900 px-3 py-2 rounded-md text-red-600 dark:text-red-400">
               <LogIn size={16} />
               Admin
             </Link>
@@ -224,7 +227,7 @@ const Navbar = () => {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="focus:outline-none">
-                  <Avatar className="hover:ring-2 hover:ring-orange-200 transition-all">
+                  <Avatar className="hover:ring-2 hover:ring-orange-200 dark:hover:ring-orange-700 transition-all">
                     <AvatarImage src={user.user_metadata?.profile_image_url} alt={user.user_metadata?.name || "avatar"} />
                     <AvatarFallback>{user.user_metadata?.name?.charAt(0)?.toUpperCase() || "A"}</AvatarFallback>
                   </Avatar>
@@ -238,7 +241,7 @@ const Navbar = () => {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-2 text-red-600">
+                <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-2 text-red-600 dark:text-red-400">
                   <LogOut size={16} />
                   Sign Out
                 </DropdownMenuItem>

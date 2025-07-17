@@ -7,11 +7,13 @@ export interface Profile {
   id: string;
   name: string;
   email: string;
+  phone?: string | null;
   profile_image_url?: string | null;
   address?: string | null;
   user_type: 'customer' | 'pandit' | 'admin';
   expertise?: string | null;
   aadhar_number?: string | null;
+  is_verified?: boolean | null;
   created_at: string;
   updated_at: string;
 }

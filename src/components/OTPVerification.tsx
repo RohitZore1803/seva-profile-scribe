@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,14 +42,14 @@ export default function OTPVerification({ email, onVerificationComplete, onBack 
       const { error } = await supabase.auth.verifyOtp({
         email,
         token: otp,
-        type: 'signup'
+        type: 'email'
       });
 
       if (error) {
         console.error("OTP verification error:", error);
         toast({
           title: "Verification Failed",
-          description: error.message + " - Try resending the code or skip verification for now.",
+          description: error.message,
           variant: "destructive",
         });
       } else {
@@ -79,6 +78,9 @@ export default function OTPVerification({ email, onVerificationComplete, onBack 
       const { error } = await supabase.auth.resend({
         type: 'signup',
         email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`
+        }
       });
 
       if (error) {
@@ -91,7 +93,7 @@ export default function OTPVerification({ email, onVerificationComplete, onBack 
       } else {
         toast({
           title: "OTP Sent",
-          description: "A new OTP has been sent to your email",
+          description: "A new verification email has been sent",
         });
         setCountdown(60);
         setOtp("");
@@ -100,7 +102,7 @@ export default function OTPVerification({ email, onVerificationComplete, onBack 
       console.error("Unexpected error during OTP resend:", error);
       toast({
         title: "Error",
-        description: "Failed to resend OTP",
+        description: "Failed to resend verification email",
         variant: "destructive",
       });
     }
@@ -110,7 +112,6 @@ export default function OTPVerification({ email, onVerificationComplete, onBack 
 
   const handleSkipVerification = async () => {
     try {
-      // Try to sign in with the credentials to complete the registration process
       const { data, error } = await supabase.auth.getSession();
       
       if (data.session) {
@@ -139,7 +140,7 @@ export default function OTPVerification({ email, onVerificationComplete, onBack 
   return (
     <Card className="w-full max-w-md">
       <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold text-center text-orange-700">
+        <CardTitle className="text-2xl font-bold text-center text-orange-700 dark:text-orange-400">
           Verify Your Email
         </CardTitle>
         <CardDescription className="text-center">
@@ -168,7 +169,7 @@ export default function OTPVerification({ email, onVerificationComplete, onBack 
           </div>
           <Button 
             type="submit" 
-            className="w-full bg-orange-600 hover:bg-orange-700" 
+            className="w-full bg-orange-600 hover:bg-orange-700 dark:bg-orange-700 dark:hover:bg-orange-600" 
             disabled={loading || otp.length !== 6}
           >
             {loading ? "Verifying..." : "Verify Code"}
