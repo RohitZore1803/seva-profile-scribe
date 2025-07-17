@@ -5,7 +5,7 @@ import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/hooks/useSession";
-import { useCustomerProfile } from "@/hooks/useCustomerProfile";
+import { useProfile } from "@/hooks/useProfile";
 import ProfileSummary from "@/components/Credentials/ProfileSummary";
 import CredentialsForm, { CredentialsFormValues } from "@/components/Credentials/CredentialsForm";
 
@@ -13,7 +13,7 @@ export default function CredentialsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, loading: sessionLoading } = useSession();
-  const { profile, loading: loadingProfile } = useCustomerProfile();
+  const { profile, loading: loadingProfile } = useProfile();
   const [loading, setLoading] = React.useState(false);
 
   React.useEffect(() => {
@@ -86,6 +86,21 @@ export default function CredentialsPage() {
 
       console.log('[Booking DEBUG] Creating booking in database');
 
+      // Convert time string to 24-hour format for database
+      const convertTo24Hour = (timeStr: string) => {
+        const [time, period] = timeStr.split(' - ')[0].split(' ');
+        const [hours, minutes] = time.split(':');
+        let hour24 = parseInt(hours);
+        
+        if (period === 'PM' && hour24 !== 12) {
+          hour24 += 12;
+        } else if (period === 'AM' && hour24 === 12) {
+          hour24 = 0;
+        }
+        
+        return `${hour24.toString().padStart(2, '0')}:${minutes}:00`;
+      };
+
       // Create booking in database with enhanced data
       const bookingData = {
         created_by: user.id,
@@ -95,7 +110,7 @@ export default function CredentialsPage() {
         location: data.location,
         address: data.address,
         phone: data.phone,
-        preferred_time: data.preferredTime,
+        preferred_time: convertTo24Hour(data.preferredTime),
         duration_hours: data.durationHours,
         special_requirements: data.specialRequirements || null,
         total_amount: existingService.price,

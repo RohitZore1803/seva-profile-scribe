@@ -38,7 +38,9 @@ export function useProfile() {
         if (error) {
           console.error("Error fetching profile:", error);
         }
-        setProfile(data || null);
+        if (data) {
+          setProfile(data as Profile);
+        }
         setLoading(false);
       });
   }, [user]);
@@ -58,7 +60,9 @@ export function useProfile() {
       return { error };
     }
 
-    setProfile(data);
+    if (data) {
+      setProfile(data as Profile);
+    }
     return { data };
   };
 

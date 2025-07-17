@@ -1,483 +1,271 @@
-import React, { useEffect, useState, useMemo, useCallback } from "react";
 
-// Service images array for first 10 services
-const serviceImages = [
-  "/lovable-uploads/vaastu-shanti.png",
-  "/lovable-uploads/griha-pravesh.png", 
-  "/lovable-uploads/bhoomi-pooja.png",
-  "/lovable-uploads/satya-narayan.png",
-  "/lovable-uploads/durja-pooja.png",
-  "/lovable-uploads/office-opening.png",
-  "/lovable-uploads/mahalakshmi.png",
-  "/lovable-uploads/ganpati-pooja.png",
-  "/lovable-uploads/rudra-abhishek.png",
-  "/lovable-uploads/mangalagaur.png"
-];
-
-// Optimized services data with better organization
-const SERVICES_DATA = [
-  {
-    id: 1,
-    title: "Vaastu Shanti",
-    category: "REGULAR",
-    img: serviceImages[0],
-    price: "₹1000.00",
-    link: "/product/1",
-  },
-  {
-    id: 2,
-    title: "Griha Pravesh",
-    category: "REGULAR",
-    img: serviceImages[1],
-    price: "₹1200.00",
-    link: "/product/2",
-  },
-  {
-    id: 3,
-    title: "Bhoomi Pooja",
-    category: "REGULAR",
-    img: serviceImages[2],
-    price: "₹1100.00",
-    link: "/product/3",
-  },
-  {
-    id: 4,
-    title: "Satya Narayan",
-    category: "REGULAR",
-    img: serviceImages[3],
-    price: "₹900.00",
-    link: "/product/4",
-  },
-  {
-    id: 5,
-    title: "Durja Pooja",
-    category: "REGULAR",
-    img: serviceImages[4],
-    price: "₹1000.00",
-    link: "/product/5",
-  },
-  {
-    id: 6,
-    title: "Office Opening Pooja",
-    category: "REGULAR",
-    img: serviceImages[5],
-    price: "₹2000.00",
-    link: "/product/6",
-  },
-  {
-    id: 7,
-    title: "Mahalakshmi Pooja",
-    category: "REGULAR",
-    img: serviceImages[6],
-    price: "₹1400.00",
-    link: "/product/7",
-  },
-  {
-    id: 8,
-    title: "Ganpati Pooja",
-    category: "REGULAR",
-    img: serviceImages[7],
-    price: "₹1200.00",
-    link: "/product/8",
-  },
-  {
-    id: 9,
-    title: "Rudra Abhishek",
-    category: "REGULAR",
-    img: serviceImages[8],
-    price: "₹1800.00",
-    link: "/product/9",
-  },
-  {
-    id: 10,
-    title: "Mangalagaur Pooja",
-    category: "REGULAR",
-    img: serviceImages[9],
-    price: "₹1300.00",
-    link: "/product/10",
-  },
-  {
-    id: 11,
-    title: "Ganpati Visarjan Pooja",
-    category: "FESTIVAL",
-    img: "/lovable-uploads/8f56705a-3508-48d2-b025-b9746aa30f85.png",
-    price: "₹900.00",
-    link: "/product/11",
-  },
-  {
-    id: 12,
-    title: "Janmashtami Pooja",
-    category: "FESTIVAL",
-    img: "/lovable-uploads/6953ad6b-9da3-45bc-bc02-63febada4a34.png",
-    price: "₹1100.00",
-    link: "/product/12",
-  },
-  {
-    id: 13,
-    title: "Diwali Lakshmi Pooja",
-    category: "FESTIVAL",
-    img: "/lovable-uploads/7a18e668-8e8d-4d40-a8a8-a286e4089324.png",
-    price: "₹2100.00",
-    link: "/product/13",
-  },
-  {
-    id: 14,
-    title: "Ganapti Sthapana Pooja",
-    category: "FESTIVAL",
-    img: "/lovable-uploads/3a7d649e-67b9-4c49-9866-d9cb4f95f0aa.png",
-    price: "₹1000.00",
-    link: "/product/14",
-  },
-  {
-    id: 15,
-    title: "Udak Shanti",
-    category: "SHANTI",
-    img: "/lovable-uploads/251e248a-4351-49bd-8651-6aeefdaee648.png",
-    price: "₹950.00",
-    link: "/product/15",
-  },
-  {
-    id: 16,
-    title: "Navgraha Shanti",
-    category: "SHANTI",
-    img: "/lovable-uploads/25013b1e-6e13-409f-803d-fbdd499fd7da.png",
-    price: "₹1700.00",
-    link: "/product/16",
-  },
-  {
-    id: 17,
-    title: "Ganapti Havan",
-    category: "HAVAN",
-    img: "/lovable-uploads/07f5ed97-9548-4467-b6f8-68cf9301ec72.png",
-    price: "₹1500.00",
-    link: "/product/17",
-  },
-  {
-    id: 18,
-    title: "Dhan Laxmi Pooja",
-    category: "HAVAN",
-    img: "/lovable-uploads/b9ec4e6a-73d1-4536-8eaa-809140586224.png",
-    price: "₹2000.00",
-    link: "/product/18",
-  },
-  {
-    id: 19,
-    title: "Ganesh Havan",
-    category: "HAVAN",
-    img: "/lovable-uploads/9ec09147-1249-4be2-9391-19df10c3d32f.png",
-    price: "₹1600.00",
-    link: "/product/19",
-  },
-  {
-    id: 20,
-    title: "Satyanarayan Havan",
-    category: "HAVAN",
-    img: "/lovable-uploads/1a779d2d-ca9c-4348-a5b7-1745de1e05fa.png",
-    price: "₹1200.00",
-    link: "/product/20",
-  },
-];
-
-// Categories configuration
-const CATEGORIES = {
-  REGULAR: "Regular",
-  FESTIVAL: "Festival", 
-  SHANTI: "Shanti",
-  HAVAN: "Havan"
-};
-
-// Price ranges configuration
-const PRICE_RANGES = {
-  budget: { label: "Budget (< ₹1,000)", min: 0, max: 999 },
-  standard: { label: "Standard (₹1,000-1,500)", min: 1000, max: 1499 },
-  premium: { label: "Premium (> ₹1,500)", min: 1500, max: Infinity }
-};
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
+import { Search, Filter, Clock, Star, Users, Calendar } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import ServiceCard from "@/components/ServiceCard";
 
 interface Service {
   id: number;
-  title: string;
-  category: string;
-  img: string | null;
-  price: string;
-  link: string;
+  name: string;
+  description: string;
+  price: number;
+  image?: string;
+  duration_hours?: number;
+  requirements?: string;
+  benefits?: string;
 }
 
-// Optimized Link component with better accessibility
-const Link = ({ to, children, className = "", ...props }) => (
-  <a 
-    href={to} 
-    className={`cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2 ${className}`}
-    onClick={(e) => e.preventDefault()}
-    {...props}
-  >
-    {children}
-  </a>
-);
-
-// Optimized ServiceCard component to reduce re-renders
-const ServiceCard = React.memo(({ service, onBookNow, onViewDetails }) => {
-  const formatPrice = (price) => price + " onwards";
-  
-  return (
-    <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 p-4 transform hover:scale-105">
-      <div className="text-center mb-3">
-        <div className="w-full h-24 bg-gradient-to-br from-orange-100 to-amber-100 rounded-md flex items-center justify-center mb-3 overflow-hidden">
-          {service.img ? (
-            <img 
-              src={service.img} 
-              alt={service.title}
-              className="w-16 h-16 object-cover rounded"
-              loading="lazy"
-              onError={(e) => {
-                e.target.style.display = 'none';
-                e.target.nextSibling.style.display = 'block';
-              }}
-            />
-          ) : null}
-          <span className="text-3xl" style={{ display: service.img ? 'none' : 'block' }}>
-            🕉️
-          </span>
-        </div>
-        <h3 className="text-lg font-semibold text-orange-800 mb-1 line-clamp-2">
-          {service.title}
-        </h3>
-        <span className="inline-block px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full mb-2">
-          {CATEGORIES[service.category] || service.category}
-        </span>
-      </div>
-      
-      <div className="text-center mb-3">
-        <p className="text-orange-700 font-semibold text-sm">{formatPrice(service.price)}</p>
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <button 
-          onClick={() => onViewDetails(service)}
-          className="w-full border-2 border-orange-600 text-orange-600 hover:bg-orange-600 hover:text-white px-3 py-2 rounded-lg font-medium transition-colors text-sm"
-        >
-          View Details
-        </button>
-        <button 
-          onClick={() => onBookNow(service)}
-          className="w-full bg-orange-600 hover:bg-orange-700 text-white px-3 py-2 rounded-lg font-medium transition-colors text-sm"
-        >
-          Book Now →
-        </button>
-      </div>
-    </div>
-  );
-});
-
-export default function ServicesPage() {
-  const [services, setServices] = useState([]);
+export default function Services() {
+  const navigate = useNavigate();
+  const [services, setServices] = useState<Service[]>([]);
+  const [filteredServices, setFilteredServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("");
-  const [priceFilter, setPriceFilter] = useState("");
-  const [error, setError] = useState(null);
+  const [priceRange, setPriceRange] = useState([0, 3000]);
+  const [durationFilter, setDurationFilter] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
 
-  // Optimized data fetching with error handling
   useEffect(() => {
-    const fetchServices = async () => {
-      try {
-        setError(null);
-        setLoading(true);
-        
-        // Simulate API call with realistic delay
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        // Set services data
-        setServices(SERVICES_DATA);
-      } catch (err) {
-        console.error("Error fetching services:", err);
-        setError("Failed to load services. Please try again.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchServices();
   }, []);
 
-  // Optimized filtering logic with better performance
-  const filteredServices = useMemo(() => {
-    let filtered = [...services];
+  useEffect(() => {
+    filterServices();
+  }, [services, searchTerm, priceRange, durationFilter]);
 
-    // Search filter with trimmed input
-    if (searchTerm.trim()) {
-      const searchLower = searchTerm.toLowerCase().trim();
-      filtered = filtered.filter(service => 
-        service.title.toLowerCase().includes(searchLower) ||
-        service.category.toLowerCase().includes(searchLower)
-      );
+  const fetchServices = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("services")
+        .select("*")
+        .order("name", { ascending: true });
+
+      if (error) {
+        console.error("Error fetching services:", error);
+        return;
+      }
+
+      setServices(data || []);
+    } catch (error) {
+      console.error("Error fetching services:", error);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    // Category filter
-    if (categoryFilter) {
-      filtered = filtered.filter(service => service.category === categoryFilter);
-    }
+  const filterServices = () => {
+    let filtered = services.filter((service) => {
+      const matchesSearch = service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           service.description.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesPrice = service.price >= priceRange[0] * 100 && service.price <= priceRange[1] * 100;
+      
+      const matchesDuration = !durationFilter || 
+                             (durationFilter === "short" && (service.duration_hours || 2) <= 2) ||
+                             (durationFilter === "medium" && (service.duration_hours || 2) > 2 && (service.duration_hours || 2) <= 4) ||
+                             (durationFilter === "long" && (service.duration_hours || 2) > 4);
 
-    // Price filter with optimized logic
-    if (priceFilter && PRICE_RANGES[priceFilter]) {
-      const { min, max } = PRICE_RANGES[priceFilter];
-      filtered = filtered.filter(service => {
-        const priceValue = parseFloat(service.price.replace(/[₹,]/g, ''));
-        return priceValue >= min && priceValue <= max;
-      });
-    }
+      return matchesSearch && matchesPrice && matchesDuration;
+    });
 
-    return filtered;
-  }, [searchTerm, categoryFilter, priceFilter, services]);
+    setFilteredServices(filtered);
+  };
 
-  // Optimized callback functions
-  const handleViewDetails = useCallback((service) => {
-    window.location.href = service.link;
-  }, []);
+  const handleBookNow = (service: Service) => {
+    navigate(`/credentials/${service.id}`);
+  };
 
-  const handleBookNow = useCallback((service) => {
-    window.location.href = `/credentials/${service.id}`;
-  }, []);
+  const handleViewDetails = (service: Service) => {
+    navigate(`/product/${service.id}`);
+  };
 
-  const clearFilters = useCallback(() => {
+  const formatPrice = (price: number) => {
+    return `₹${(price / 100).toLocaleString()}`;
+  };
+
+  const clearFilters = () => {
     setSearchTerm("");
-    setCategoryFilter("");
-    setPriceFilter("");
-  }, []);
+    setPriceRange([0, 3000]);
+    setDurationFilter("");
+  };
 
-  const retryFetch = useCallback(() => {
-    window.location.reload();
-  }, []);
+  const toggleFilters = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    setShowFilters(!showFilters);
+    
+    // Add smooth animation
+    const filtersPanel = target.nextSibling as HTMLElement;
+    if (filtersPanel) {
+      if (showFilters) {
+        filtersPanel.style.maxHeight = "0px";
+        filtersPanel.style.opacity = "0";
+      } else {
+        filtersPanel.style.maxHeight = "500px";
+        filtersPanel.style.opacity = "1";
+      }
+    }
+  };
 
-  // Error state with retry functionality
-  if (error && !loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50">
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center py-16">
-            <div className="text-6xl mb-4">⚠️</div>
-            <h2 className="text-2xl font-bold text-red-600 mb-4">Error Loading Services</h2>
-            <p className="text-gray-600 mb-6">{error}</p>
-            <button 
-              onClick={retryFetch}
-              className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
-            >
-              Try Again
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Loading state with better UX
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50">
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center py-16">
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-700">
+        <div className="container mx-auto px-4 py-12">
+          <div className="text-center mb-8">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading services...</p>
+            <p className="text-gray-600 dark:text-gray-300">Loading spiritual services...</p>
           </div>
         </div>
       </div>
     );
   }
 
-  const hasActiveFilters = searchTerm || categoryFilter || priceFilter;
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header Section */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-6xl font-bold text-orange-800 mb-4">
-            Our Pooja Services
-          </h1>
-          <p className="text-lg text-orange-700 mb-8">
-            Connect with experienced Pandits for authentic spiritual services
-          </p>
-          
-          {/* Search and Filter Bar */}
-          <div className="max-w-4xl mx-auto mb-8">
-            <div className="relative mb-4">
-              <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-              <input
-                type="text"
-                placeholder="Search for pooja services..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 text-lg border-2 border-orange-200 rounded-lg focus:border-orange-400 focus:outline-none bg-white transition-colors"
-              />
-            </div>
-            
-            {/* Filters */}
-            <div className="flex flex-wrap gap-4 justify-center items-center">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-700">
+      {/* Hero Section */}
+      <div className="relative py-20 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-orange-600/20 to-amber-600/20 dark:from-orange-600/10 dark:to-amber-600/10"></div>
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="text-center max-w-4xl mx-auto">
+            <h1 className="text-5xl md:text-6xl font-bold text-orange-800 dark:text-orange-400 mb-6">
+              Sacred Services
+            </h1>
+            <p className="text-xl text-gray-700 dark:text-gray-300 mb-8 leading-relaxed">
+              Discover authentic spiritual services performed by experienced pandits. 
+              Bring divine blessings and prosperity to your home with traditional rituals.
+            </p>
+            <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-600 dark:text-gray-400">
               <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z" />
-                </svg>
-                <span className="text-orange-700 font-medium">Filters:</span>
+                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                <span>Verified Pandits</span>
               </div>
-              
-              <select 
-                value={categoryFilter} 
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                className="px-4 py-2 border-2 border-orange-200 rounded-lg focus:border-orange-400 focus:outline-none bg-white transition-colors"
-              >
-                <option value="">All Categories</option>
-                {Object.entries(CATEGORIES).map(([key, label]) => (
-                  <option key={key} value={key}>{label}</option>
-                ))}
-              </select>
-              
-              <select 
-                value={priceFilter} 
-                onChange={(e) => setPriceFilter(e.target.value)}
-                className="px-4 py-2 border-2 border-orange-200 rounded-lg focus:border-orange-400 focus:outline-none bg-white transition-colors"
-              >
-                <option value="">All Prices</option>
-                {Object.entries(PRICE_RANGES).map(([key, { label }]) => (
-                  <option key={key} value={key}>{label}</option>
-                ))}
-              </select>
-
-              {hasActiveFilters && (
-                <button 
-                  onClick={clearFilters}
-                  className="border-2 border-orange-600 text-orange-600 hover:bg-orange-600 hover:text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                >
-                  Clear Filters
-                </button>
-              )}
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                <span>Authentic Rituals</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                <span>Home Service</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                <span>24/7 Support</span>
+              </div>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Results Count */}
-        <div className="text-center mb-6">
-          <p className="text-orange-700">
+      <div className="container mx-auto px-4 pb-12">
+        {/* Search and Filters */}
+        <Card className="mb-8 bg-white/80 backdrop-blur-sm border-orange-100 shadow-lg">
+          <CardHeader>
+            <div className="flex flex-col lg:flex-row gap-4 items-center">
+              <div className="relative flex-1 w-full">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Input
+                  placeholder="Search for pooja services..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 py-3 text-lg border-orange-200 focus:border-orange-400"
+                />
+              </div>
+              <Button
+                onClick={toggleFilters}
+                variant="outline"
+                className="border-orange-200 text-orange-600 hover:bg-orange-50"
+              >
+                <Filter className="w-4 h-4 mr-2" />
+                Filters
+              </Button>
+            </div>
+          </CardHeader>
+
+          <CardContent
+            className="transition-all duration-300 overflow-hidden"
+            style={{
+              maxHeight: showFilters ? "500px" : "0px",
+              opacity: showFilters ? 1 : 0,
+              padding: showFilters ? "1.5rem" : "0 1.5rem",
+            }}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Price Range: ₹{priceRange[0]} - ₹{priceRange[1]}
+                </label>
+                <Slider
+                  value={priceRange}
+                  onValueChange={setPriceRange}
+                  max={3000}
+                  min={0}
+                  step={100}
+                  className="w-full"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Duration
+                </label>
+                <Select value={durationFilter} onValueChange={setDurationFilter}>
+                  <SelectTrigger className="border-orange-200 focus:border-orange-400">
+                    <SelectValue placeholder="Any duration" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Any duration</SelectItem>
+                    <SelectItem value="short">Short (≤ 2 hours)</SelectItem>
+                    <SelectItem value="medium">Medium (2-4 hours)</SelectItem>
+                    <SelectItem value="long">Long (> 4 hours)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-end">
+                <Button onClick={clearFilters} variant="outline" className="w-full">
+                  Clear Filters
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Results Summary */}
+        <div className="mb-6">
+          <p className="text-gray-600 dark:text-gray-400">
             Showing {filteredServices.length} of {services.length} services
+            {searchTerm && (
+              <span className="ml-2">
+                for "<strong>{searchTerm}</strong>"
+              </span>
+            )}
           </p>
         </div>
 
         {/* Services Grid */}
         {filteredServices.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">🔍</div>
-            <h3 className="text-2xl font-bold text-orange-800 mb-2">No services found</h3>
-            <p className="text-orange-700">
-              {hasActiveFilters ? 
-                "Try adjusting your filters or search terms" : 
-                "No services available at the moment"
-              }
-            </p>
-          </div>
+          <Card className="text-center py-12 bg-white/80 backdrop-blur-sm">
+            <CardContent>
+              <div className="text-6xl mb-4">🙏</div>
+              <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-300 mb-2">
+                No services found
+              </h3>
+              <p className="text-gray-500 dark:text-gray-400 mb-6">
+                Try adjusting your search or filter criteria
+              </p>
+              <Button onClick={clearFilters} className="bg-orange-600 hover:bg-orange-700">
+                Clear Filters
+              </Button>
+            </CardContent>
+          </Card>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-6xl mx-auto mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredServices.map((service) => (
               <ServiceCard
                 key={service.id}
@@ -488,28 +276,6 @@ export default function ServicesPage() {
             ))}
           </div>
         )}
-
-        {/* Bottom CTA */}
-        <div className="text-center bg-white rounded-lg shadow-md p-8 max-w-4xl mx-auto">
-          <h3 className="text-2xl md:text-3xl font-bold text-orange-800 mb-4">
-            Need a Custom Pooja Service?
-          </h3>
-          <p className="text-lg text-orange-700 mb-6">
-            Can't find what you're looking for? Contact us for personalized pooja arrangements
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/contact">
-              <button className="bg-orange-600 hover:bg-orange-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors">
-                Contact Us
-              </button>
-            </Link>
-            <Link to="/auth?role=customer">
-              <button className="border-2 border-orange-600 text-orange-600 hover:bg-orange-600 hover:text-white px-8 py-3 rounded-lg font-semibold transition-colors">
-                Register Now
-              </button>
-            </Link>
-          </div>
-        </div>
       </div>
     </div>
   );

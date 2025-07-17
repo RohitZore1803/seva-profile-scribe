@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Camera, Upload, X, Save } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 interface EditCustomerProfileModalProps {
   open: boolean;
@@ -24,6 +25,7 @@ export default function EditCustomerProfileModal({
   const [formData, setFormData] = useState({
     name: "",
     address: "",
+    phone: "",
   });
   const [profileImage, setProfileImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -35,6 +37,7 @@ export default function EditCustomerProfileModal({
       setFormData({
         name: profile.name || "",
         address: profile.address || "",
+        phone: profile.phone || "",
       });
       setPreviewUrl(profile.profile_image_url || null);
       setProfileImage(null);
@@ -46,13 +49,21 @@ export default function EditCustomerProfileModal({
     if (file) {
       // Validate file type
       if (!file.type.startsWith('image/')) {
-        alert('Please select an image file');
+        toast({
+          title: "Invalid File Type",
+          description: "Please select an image file",
+          variant: "destructive",
+        });
         return;
       }
       
       // Validate file size (5MB limit)
       if (file.size > 5 * 1024 * 1024) {
-        alert('Image size should be less than 5MB');
+        toast({
+          title: "File Too Large",
+          description: "Image size should be less than 5MB",
+          variant: "destructive",
+        });
         return;
       }
 
@@ -100,7 +111,7 @@ export default function EditCustomerProfileModal({
 
       if (uploadError) {
         console.error('Upload error:', uploadError);
-        return null;
+        throw new Error('Failed to upload image');
       }
 
       // Get public URL
@@ -111,7 +122,7 @@ export default function EditCustomerProfileModal({
       return publicUrl;
     } catch (error) {
       console.error('Error uploading image:', error);
-      return null;
+      throw new Error('Failed to upload image');
     } finally {
       setUploading(false);
     }
@@ -125,19 +136,18 @@ export default function EditCustomerProfileModal({
       // Upload new profile image if selected
       let profileImageUrl = profile?.profile_image_url;
       if (profileImage) {
-        const newImageUrl = await uploadProfileImage();
-        if (newImageUrl) {
-          profileImageUrl = newImageUrl;
-        }
+        profileImageUrl = await uploadProfileImage();
       }
 
-      // Update profile in the new unified profiles table
+      // Update profile in the unified profiles table
       const { data, error } = await supabase
         .from('profiles')
         .update({
           name: formData.name,
           address: formData.address,
+          phone: formData.phone,
           profile_image_url: profileImageUrl,
+          updated_at: new Date().toISOString(),
         })
         .eq('id', profile.id)
         .select()
@@ -145,15 +155,23 @@ export default function EditCustomerProfileModal({
 
       if (error) {
         console.error('Profile update error:', error);
-        alert('Failed to update profile');
-        return;
+        throw new Error('Failed to update profile');
       }
+
+      toast({
+        title: "Profile Updated",
+        description: "Your profile has been updated successfully",
+      });
 
       onProfileUpdated(data);
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating profile:', error);
-      alert('Failed to update profile');
+      toast({
+        title: "Update Failed",
+        description: error.message || "Failed to update profile",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -175,20 +193,33 @@ export default function EditCustomerProfileModal({
       // Update profile to remove image URL
       const { data, error } = await supabase
         .from('profiles')
-        .update({ profile_image_url: null })
+        .update({ 
+          profile_image_url: null,
+          updated_at: new Date().toISOString(),
+        })
         .eq('id', profile.id)
         .select()
         .single();
 
       if (error) {
         console.error('Error removing image:', error);
-        return;
+        throw new Error('Failed to remove image');
       }
 
       setPreviewUrl(null);
       onProfileUpdated(data);
-    } catch (error) {
+      
+      toast({
+        title: "Image Removed",
+        description: "Profile image has been removed successfully",
+      });
+    } catch (error: any) {
       console.error('Error deleting image:', error);
+      toast({
+        title: "Delete Failed",
+        description: error.message || "Failed to remove image",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -267,6 +298,18 @@ export default function EditCustomerProfileModal({
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
               placeholder="Enter your full name"
+            />
+          </div>
+
+          {/* Phone Field */}
+          <div className="space-y-2">
+            <Label htmlFor="phone">Phone Number</Label>
+            <Input
+              id="phone"
+              type="tel"
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              placeholder="Enter your phone number"
             />
           </div>
 
