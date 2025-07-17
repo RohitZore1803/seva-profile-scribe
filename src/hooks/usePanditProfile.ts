@@ -2,16 +2,11 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "./useSession";
+import { Profile } from "./useProfile";
 
-export interface PanditProfile {
-  id: string;
-  name: string;
-  email: string;
-  profile_image_url?: string | null;
-  address: string;
+export interface PanditProfile extends Profile {
   expertise: string;
   aadhar_number: string;
-  created_at: string;
 }
 
 export function usePanditProfile() {
@@ -26,12 +21,15 @@ export function usePanditProfile() {
     }
     setLoading(true);
     supabase
-      .from("pandit_profiles")
+      .from("profiles")
       .select("*")
       .eq("id", user.id)
+      .eq("user_type", "pandit")
       .single()
       .then(({ data }) => {
-        setProfile(data || null);
+        if (data) {
+          setProfile(data as PanditProfile);
+        }
         setLoading(false);
       });
   }, [user]);

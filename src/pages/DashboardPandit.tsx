@@ -1,3 +1,4 @@
+
 import { useSession } from "@/hooks/useSession";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -202,7 +203,7 @@ export default function DashboardPandit() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your dashboard...</p>
+          <p className="text-blue-800">Loading your dashboard...</p>
         </div>
       </div>
     );
@@ -211,7 +212,7 @@ export default function DashboardPandit() {
   if (!user || !profile) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="text-center text-gray-500">
+        <div className="text-center text-blue-600">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
           <p>Loading profile...</p>
         </div>
@@ -252,19 +253,19 @@ export default function DashboardPandit() {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Profile Sidebar */}
           <div className="lg:w-64 flex-shrink-0">
-            <div className="bg-white rounded-xl shadow-md p-6">
+            <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-md p-6 border border-blue-200">
               <div className="text-center mb-6">
                 <div className="w-20 h-20 bg-blue-100 rounded-full mx-auto mb-3 flex items-center justify-center">
                   <span className="text-2xl font-bold text-blue-700">
                     {profile.name?.charAt(0)?.toUpperCase() || 'P'}
                   </span>
                 </div>
-                <h3 className="font-semibold text-lg">{profile.name}</h3>
-                <p className="text-sm text-gray-500">Pandit</p>
+                <h3 className="font-semibold text-lg text-blue-800">{profile.name}</h3>
+                <p className="text-sm text-blue-600">Pandit</p>
                 {profile.expertise && (
                   <div className="mt-2 flex items-center justify-center gap-1">
                     <Star className="w-4 h-4 text-yellow-500" />
-                    <span className="text-xs text-gray-600">{profile.expertise}</span>
+                    <span className="text-xs text-blue-600">{profile.expertise}</span>
                   </div>
                 )}
               </div>
@@ -273,7 +274,7 @@ export default function DashboardPandit() {
                 <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
                   <div className="flex items-center gap-2">
                     <Award className="w-4 h-4 text-blue-600" />
-                    <span className="text-sm font-medium">Verified</span>
+                    <span className="text-sm font-medium text-blue-800">Verified</span>
                   </div>
                   <span className={`text-xs px-2 py-1 rounded ${
                     profile.is_verified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
@@ -285,7 +286,7 @@ export default function DashboardPandit() {
                 <Button 
                   onClick={() => setOpenEditModal(true)} 
                   variant="outline" 
-                  className="w-full flex items-center gap-2 hover:scale-105 transition-transform"
+                  className="w-full flex items-center gap-2 hover:scale-105 transition-transform border-blue-200 text-blue-700 hover:bg-blue-50"
                 >
                   <Edit className="w-4 h-4" /> 
                   Edit Profile
@@ -302,14 +303,14 @@ export default function DashboardPandit() {
               onFilterChange={setActiveFilter}
             />
 
-              <div className="bg-white rounded-xl shadow-md overflow-hidden mb-8">
-                <div className="px-6 py-4 border-b bg-gray-50">
-                  <h2 className="text-xl font-semibold text-gray-800">
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-md overflow-hidden mb-8 border border-blue-200">
+                <div className="px-6 py-4 border-b bg-blue-50">
+                  <h2 className="text-xl font-semibold text-blue-800">
                     {activeFilter === "pending" ? "New Booking Requests" : 
                      activeFilter === "all" ? "All Bookings" : 
                      `${activeFilter.charAt(0).toUpperCase() + activeFilter.slice(1)} Bookings`}
                   </h2>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="text-sm text-blue-600 mt-1">
                     {activeFilter === "pending" ? "Accept or reject new customer requests" : 
                      "Manage your bookings and customer requests"}
                   </p>
@@ -325,10 +326,10 @@ export default function DashboardPandit() {
                 />
               </div>
 
-            <div className="bg-white rounded-xl shadow-md overflow-hidden">
-              <div className="px-6 py-4 border-b bg-gray-50">
-                <h2 className="text-xl font-semibold text-gray-800">Completed Poojas</h2>
-                <p className="text-sm text-gray-600 mt-1">
+            <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-md overflow-hidden border border-blue-200">
+              <div className="px-6 py-4 border-b bg-blue-50">
+                <h2 className="text-xl font-semibold text-blue-800">Completed Poojas</h2>
+                <p className="text-sm text-blue-600 mt-1">
                   Your completed ceremony history
                 </p>
               </div>

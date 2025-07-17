@@ -1,49 +1,45 @@
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Calendar, MapPin, Phone, User, DollarSign } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useSession } from "@/hooks/useSession";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
 
 interface Booking {
   id: string;
   fromdate: string;
   todate: string;
+  status: string;
   location: string;
   address: string;
-  phone: string;
-  status: string;
-  total_amount: number;
-  created_at: string;
   services: {
     name: string;
-    price: number;
-  };
+  } | null;
   profiles: {
     name: string;
     email: string;
-  };
+  } | null;
 }
 
-export default function PanditCompletedPoojasTable() {
-  const { user } = useSession();
+interface PanditCompletedPoojasTableProps {
+  panditId: string;
+}
+
+export default function PanditCompletedPoojasTable({ panditId }: PanditCompletedPoojasTableProps) {
   const [completedBookings, setCompletedBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) return;
-    
     const fetchCompletedBookings = async () => {
       try {
         const { data, error } = await supabase
           .from("bookings")
           .select(`
             *,
-            services (name, price),
-            profiles!inner(name, email)
+            services:service_id (name),
+            profiles:created_by (name, email)
           `)
-          .eq("pandit_id", user.id)
+          .eq("pandit_id", panditId)
           .eq("status", "completed")
           .order("created_at", { ascending: false });
 
@@ -52,108 +48,87 @@ export default function PanditCompletedPoojasTable() {
           return;
         }
 
-        setCompletedBookings(data || []);
+        // Transform the data to match our interface
+        const transformedData = (data || []).map(booking => ({
+          ...booking,
+          services: booking.services ? { name: booking.services.name } : null,
+          profiles: booking.profiles ? { 
+            name: booking.profiles.name, 
+            email: booking.profiles.email 
+          } : null
+        }));
+
+        setCompletedBookings(transformedData);
       } catch (error) {
-        console.error("Error fetching completed bookings:", error);
+        console.error("Error in fetchCompletedBookings:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchCompletedBookings();
-  }, [user]);
-
-  const formatPrice = (amount: number) => {
-    return `₹${(amount / 100).toLocaleString()}`;
-  };
+    if (panditId) {
+      fetchCompletedBookings();
+    }
+  }, [panditId]);
 
   if (loading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Completed Pooja Services</CardTitle>
-          <CardDescription>Your completed pooja bookings and earnings</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center py-8">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto mb-2"></div>
-              <p className="text-gray-600">Loading completed bookings...</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (completedBookings.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-500">No completed poojas yet</p>
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Calendar className="h-5 w-5" />
-          Completed Pooja Services
-        </CardTitle>
-        <CardDescription>
-          Your completed pooja bookings and earnings history
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {completedBookings.length === 0 ? (
-          <div className="text-center py-8">
-            <div className="text-4xl mb-4">🙏</div>
-            <h3 className="text-lg font-semibold text-gray-600 mb-2">No Completed Services Yet</h3>
-            <p className="text-gray-500">Complete your first pooja service to see it here</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {completedBookings.map((booking) => (
-              <div key={booking.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <h4 className="font-semibold text-lg text-orange-800">
-                      {booking.services?.name}
-                    </h4>
-                    <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />
-                        <span>{new Date(booking.fromdate).toLocaleDateString()}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <User className="w-4 h-4" />
-                        <span>{booking.profiles?.name}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <Badge className="bg-green-100 text-green-800 mb-2">
-                      Completed
-                    </Badge>
-                    <div className="flex items-center gap-1 text-lg font-semibold text-green-600">
-                      <DollarSign className="w-4 h-4" />
-                      {formatPrice(booking.total_amount || booking.services?.price || 0)}
-                    </div>
-                  </div>
+    <div className="overflow-x-auto">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Service</TableHead>
+            <TableHead>Customer</TableHead>
+            <TableHead>Date</TableHead>
+            <TableHead>Location</TableHead>
+            <TableHead>Status</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {completedBookings.map((booking) => (
+            <TableRow key={booking.id}>
+              <TableCell className="font-medium">
+                {booking.services?.name || "Unknown Service"}
+              </TableCell>
+              <TableCell>
+                <div>
+                  <div className="font-medium">{booking.profiles?.name || "Unknown Customer"}</div>
+                  <div className="text-sm text-gray-500">{booking.profiles?.email}</div>
                 </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
-                  {booking.location && (
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4" />
-                      <span>{booking.location}</span>
-                    </div>
-                  )}
-                  {booking.phone && (
-                    <div className="flex items-center gap-2">
-                      <Phone className="w-4 h-4" />
-                      <span>{booking.phone}</span>
-                    </div>
-                  )}
+              </TableCell>
+              <TableCell>
+                {format(new Date(booking.fromdate), "PPP")}
+              </TableCell>
+              <TableCell>
+                <div>
+                  <div className="font-medium">{booking.location}</div>
+                  <div className="text-sm text-gray-500">{booking.address}</div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+              </TableCell>
+              <TableCell>
+                <Badge variant="secondary" className="bg-green-100 text-green-800">
+                  {booking.status.toUpperCase()}
+                </Badge>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 }

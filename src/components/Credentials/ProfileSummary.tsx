@@ -1,10 +1,10 @@
 
 import React from "react";
 import CopyToClipboardButton from "@/components/CopyToClipboardButton";
-import { CustomerProfile } from "@/hooks/useCustomerProfile";
+import { Profile } from "@/hooks/useProfile";
 
 type ProfileSummaryProps = {
-  profile: CustomerProfile | null;
+  profile: Profile | null;
   loading?: boolean;
 };
 
