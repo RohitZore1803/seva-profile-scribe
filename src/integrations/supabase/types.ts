@@ -117,33 +117,6 @@ export type Database = {
           },
         ]
       }
-      customer_profiles: {
-        Row: {
-          address: string | null
-          created_at: string
-          email: string
-          id: string
-          name: string
-          profile_image_url: string | null
-        }
-        Insert: {
-          address?: string | null
-          created_at?: string
-          email: string
-          id: string
-          name: string
-          profile_image_url?: string | null
-        }
-        Update: {
-          address?: string | null
-          created_at?: string
-          email?: string
-          id?: string
-          name?: string
-          profile_image_url?: string | null
-        }
-        Relationships: []
-      }
       feedback: {
         Row: {
           created_at: string
@@ -177,39 +150,6 @@ export type Database = {
         }
         Relationships: []
       }
-      pandit_profiles: {
-        Row: {
-          aadhar_number: string
-          address: string
-          created_at: string
-          email: string
-          expertise: string
-          id: string
-          name: string
-          profile_image_url: string | null
-        }
-        Insert: {
-          aadhar_number: string
-          address: string
-          created_at?: string
-          email: string
-          expertise: string
-          id: string
-          name: string
-          profile_image_url?: string | null
-        }
-        Update: {
-          aadhar_number?: string
-          address?: string
-          created_at?: string
-          email?: string
-          expertise?: string
-          id?: string
-          name?: string
-          profile_image_url?: string | null
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           aadhar_number: string | null
@@ -220,6 +160,7 @@ export type Database = {
           id: string
           is_verified: boolean | null
           name: string
+          phone: string | null
           profile_image_url: string | null
           updated_at: string
           user_type: string
@@ -233,6 +174,7 @@ export type Database = {
           id: string
           is_verified?: boolean | null
           name: string
+          phone?: string | null
           profile_image_url?: string | null
           updated_at?: string
           user_type?: string
@@ -246,6 +188,7 @@ export type Database = {
           id?: string
           is_verified?: boolean | null
           name?: string
+          phone?: string | null
           profile_image_url?: string | null
           updated_at?: string
           user_type?: string

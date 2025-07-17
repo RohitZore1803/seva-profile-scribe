@@ -49,6 +49,7 @@ export default function DashboardCustomer() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
+      console.log("Fetched bookings:", bookingsData);
       setBookings(bookingsData || []);
     } catch (error) {
       console.error("Error fetching bookings:", error);
@@ -59,7 +60,10 @@ export default function DashboardCustomer() {
 
   const handleProfileUpdate = async (updatedProfile: any) => {
     if (updateProfile) {
-      await updateProfile(updatedProfile);
+      const result = await updateProfile(updatedProfile);
+      if (!result.error) {
+        console.log("Profile updated successfully");
+      }
     }
     setEditModalOpen(false);
   };
@@ -67,15 +71,15 @@ export default function DashboardCustomer() {
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
       case "pending":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300";
       case "confirmed":
-        return "bg-blue-100 text-blue-800";
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
       case "completed":
-        return "bg-green-100 text-green-800";
+        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
       case "cancelled":
-        return "bg-red-100 text-red-800";
+        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
     }
   };
 
@@ -85,40 +89,40 @@ export default function DashboardCustomer() {
 
   if (profileLoading || loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading dashboard...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading dashboard...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-orange-800 mb-2">Customer Dashboard</h1>
-            <p className="text-gray-600">Welcome back! Manage your bookings and profile here.</p>
+            <h1 className="text-3xl font-bold text-foreground mb-2">Customer Dashboard</h1>
+            <p className="text-muted-foreground">Welcome back! Manage your bookings and profile here.</p>
           </div>
 
           <div className="grid lg:grid-cols-3 gap-8">
             {/* Profile Section */}
             <div className="lg:col-span-1">
-              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+              <Card className="bg-card border-border">
                 <CardHeader className="text-center pb-4">
                   <div className="flex flex-col items-center space-y-4">
                     <Avatar className="w-24 h-24">
                       <AvatarImage src={profile?.profile_image_url || undefined} />
-                      <AvatarFallback className="text-2xl font-bold bg-orange-100 text-orange-600">
+                      <AvatarFallback className="text-2xl font-bold bg-primary/10 text-primary">
                         {profile?.name?.charAt(0).toUpperCase() || 'U'}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <CardTitle className="text-xl text-orange-800">{profile?.name || 'User'}</CardTitle>
-                      <CardDescription className="flex items-center gap-1 mt-1">
+                      <CardTitle className="text-xl text-foreground">{profile?.name || 'User'}</CardTitle>
+                      <CardDescription className="flex items-center gap-1 mt-1 text-muted-foreground">
                         <Mail className="w-4 h-4" />
                         {profile?.email}
                       </CardDescription>
@@ -126,17 +130,24 @@ export default function DashboardCustomer() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  {profile?.phone && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Phone className="w-4 h-4" />
+                      <span>{profile.phone}</span>
+                    </div>
+                  )}
+                  
                   {profile?.address && (
-                    <div className="flex items-start gap-2 text-sm text-gray-600">
+                    <div className="flex items-start gap-2 text-sm text-muted-foreground">
                       <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
                       <span>{profile.address}</span>
                     </div>
                   )}
                   
-                  <div className="pt-4 border-t">
+                  <div className="pt-4 border-t border-border">
                     <Button 
                       onClick={() => setEditModalOpen(true)}
-                      className="w-full bg-orange-600 hover:bg-orange-700 text-white"
+                      className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                     >
                       <Edit className="w-4 h-4 mr-2" />
                       Edit Profile
@@ -148,10 +159,10 @@ export default function DashboardCustomer() {
 
             {/* Bookings Section */}
             <div className="lg:col-span-2">
-              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+              <Card className="bg-card border-border">
                 <CardHeader>
-                  <CardTitle className="text-2xl text-orange-800">Your Bookings</CardTitle>
-                  <CardDescription>
+                  <CardTitle className="text-2xl text-foreground">Your Bookings</CardTitle>
+                  <CardDescription className="text-muted-foreground">
                     Track your pooja service bookings and their status
                   </CardDescription>
                 </CardHeader>
@@ -159,11 +170,11 @@ export default function DashboardCustomer() {
                   {bookings.length === 0 ? (
                     <div className="text-center py-12">
                       <div className="text-6xl mb-4">📅</div>
-                      <h3 className="text-xl font-semibold text-gray-600 mb-2">No Bookings Yet</h3>
-                      <p className="text-gray-500 mb-6">Start by booking your first pooja service</p>
+                      <h3 className="text-xl font-semibold text-foreground mb-2">No Bookings Yet</h3>
+                      <p className="text-muted-foreground mb-6">Start by booking your first pooja service</p>
                       <Button 
                         onClick={() => window.location.href = '/services'}
-                        className="bg-orange-600 hover:bg-orange-700 text-white"
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground"
                       >
                         Browse Services
                       </Button>
@@ -171,14 +182,14 @@ export default function DashboardCustomer() {
                   ) : (
                     <div className="space-y-4">
                       {bookings.map((booking) => (
-                        <Card key={booking.id} className="border border-orange-100 hover:shadow-md transition-shadow">
+                        <Card key={booking.id} className="border border-border hover:shadow-md transition-shadow bg-card">
                           <CardContent className="p-4">
                             <div className="flex justify-between items-start mb-3">
                               <div>
-                                <h4 className="font-semibold text-lg text-orange-800">
+                                <h4 className="font-semibold text-lg text-foreground">
                                   {booking.services?.name}
                                 </h4>
-                                <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
+                                <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
                                   <div className="flex items-center gap-1">
                                     <Calendar className="w-4 h-4" />
                                     <span>{new Date(booking.fromdate).toLocaleDateString()}</span>
@@ -196,7 +207,7 @@ export default function DashboardCustomer() {
                               </Badge>
                             </div>
                             
-                            <div className="space-y-2 text-sm text-gray-600">
+                            <div className="space-y-2 text-sm text-muted-foreground">
                               {booking.location && (
                                 <div className="flex items-center gap-2">
                                   <MapPin className="w-4 h-4" />
@@ -211,7 +222,7 @@ export default function DashboardCustomer() {
                               )}
                               {booking.services?.price && (
                                 <div className="flex items-center gap-2">
-                                  <span className="font-semibold">Price: {formatPrice(booking.services.price)}</span>
+                                  <span className="font-semibold text-foreground">Price: {formatPrice(booking.services.price)}</span>
                                 </div>
                               )}
                             </div>
