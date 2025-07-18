@@ -49,12 +49,12 @@ export default function PanditCompletedPoojasTable({ panditId }: PanditCompleted
         }
 
         // Transform the data to match our interface
-        const transformedData = (data || []).map(booking => ({
+        const transformedData = (data || []).map((booking: any) => ({
           ...booking,
           services: booking.services ? { name: booking.services.name } : null,
           profiles: booking.profiles ? { 
-            name: booking.profiles.name, 
-            email: booking.profiles.email 
+            name: booking.profiles.name || "Unknown", 
+            email: booking.profiles.email || "N/A"
           } : null
         }));
 

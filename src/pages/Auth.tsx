@@ -43,7 +43,28 @@ export default function AuthPage() {
 
   useEffect(() => {
     if (user && !loading) {
-      navigate("/dashboard-customer");
+      // Fetch user profile to determine redirect
+      const fetchProfile = async () => {
+        try {
+          const { data } = await supabase
+            .from("profiles")
+            .select("user_type")
+            .eq("id", user.id)
+            .single();
+            
+          if (data?.user_type === "pandit") {
+            navigate("/dashboard-pandit");
+          } else if (data?.user_type === "admin") {
+            navigate("/dashboard-admin");
+          } else {
+            navigate("/dashboard-customer");
+          }
+        } catch (error) {
+          navigate("/dashboard-customer");
+        }
+      };
+      
+      fetchProfile();
     }
   }, [user, loading, navigate]);
 
@@ -179,7 +200,12 @@ export default function AuthPage() {
 
   const handleVerificationComplete = () => {
     setShowOTPVerification(false);
-    navigate("/dashboard-customer");
+    // Navigate based on selected role during signup
+    if (selectedRole === "pandit") {
+      navigate("/dashboard-pandit");
+    } else {
+      navigate("/dashboard-customer");
+    }
   };
 
   const handleBackToSignup = () => {
