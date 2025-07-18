@@ -50,7 +50,7 @@ export default function AuthPage() {
             .from("profiles")
             .select("user_type")
             .eq("id", user.id)
-            .single();
+            .maybeSingle();
             
           if (data?.user_type === "pandit") {
             navigate("/dashboard-pandit");
@@ -60,6 +60,7 @@ export default function AuthPage() {
             navigate("/dashboard-customer");
           }
         } catch (error) {
+          console.error("Error fetching profile:", error);
           navigate("/dashboard-customer");
         }
       };
@@ -173,18 +174,16 @@ export default function AuthPage() {
         return;
       }
 
-      if (data.user && !data.user.email_confirmed_at) {
-        setVerificationEmail(signupForm.email);
-        setShowOTPVerification(true);
-        toast({
-          title: "Account Created!",
-          description: "Please check your email for verification code.",
-        });
+      toast({
+        title: "Account Created!",
+        description: "Your account has been created successfully. You can verify your email later.",
+      });
+      
+      // Skip verification for now and redirect based on role
+      if (selectedRole === "pandit") {
+        navigate("/dashboard-pandit");
       } else {
-        toast({
-          title: "Account Created!",
-          description: "Your account has been created successfully.",
-        });
+        navigate("/dashboard-customer");
       }
     } catch (error) {
       console.error("Signup error:", error);
