@@ -163,7 +163,7 @@ export type Database = {
           phone: string | null
           profile_image_url: string | null
           updated_at: string
-          user_type: string
+          user_type: Database["public"]["Enums"]["user_type"]
         }
         Insert: {
           aadhar_number?: string | null
@@ -177,7 +177,7 @@ export type Database = {
           phone?: string | null
           profile_image_url?: string | null
           updated_at?: string
-          user_type?: string
+          user_type?: Database["public"]["Enums"]["user_type"]
         }
         Update: {
           aadhar_number?: string | null
@@ -191,7 +191,7 @@ export type Database = {
           phone?: string | null
           profile_image_url?: string | null
           updated_at?: string
-          user_type?: string
+          user_type?: Database["public"]["Enums"]["user_type"]
         }
         Relationships: []
       }
@@ -257,7 +257,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      user_type: "pandit" | "customer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -384,6 +384,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      user_type: ["pandit", "customer"],
+    },
   },
 } as const

@@ -10,7 +10,7 @@ export interface Profile {
   phone?: string | null;
   profile_image_url?: string | null;
   address?: string | null;
-  user_type: 'customer' | 'pandit' | 'admin';
+  user_type: 'customer' | 'pandit';
   expertise?: string | null;
   aadhar_number?: string | null;
   is_verified?: boolean | null;

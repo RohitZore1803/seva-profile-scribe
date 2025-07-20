@@ -25,8 +25,11 @@ export function usePanditProfile() {
       .select("*")
       .eq("id", user.id)
       .eq("user_type", "pandit")
-      .single()
-      .then(({ data }) => {
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (error) {
+          console.error("Error fetching pandit profile:", error);
+        }
         if (data) {
           setProfile(data as PanditProfile);
         }

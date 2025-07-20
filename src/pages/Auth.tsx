@@ -18,8 +18,6 @@ export default function AuthPage() {
   const { user, loading } = useSession();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [showOTPVerification, setShowOTPVerification] = useState(false);
-  const [verificationEmail, setVerificationEmail] = useState("");
   
   const defaultRole = searchParams.get("role") || "customer";
   const [selectedRole, setSelectedRole] = useState<"customer" | "pandit">(
@@ -197,20 +195,6 @@ export default function AuthPage() {
     }
   };
 
-  const handleVerificationComplete = () => {
-    setShowOTPVerification(false);
-    // Navigate based on selected role during signup
-    if (selectedRole === "pandit") {
-      navigate("/dashboard-pandit");
-    } else {
-      navigate("/dashboard-customer");
-    }
-  };
-
-  const handleBackToSignup = () => {
-    setShowOTPVerification(false);
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
@@ -218,18 +202,6 @@ export default function AuthPage() {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-300">Loading...</p>
         </div>
-      </div>
-    );
-  }
-
-  if (showOTPVerification) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
-        <OTPVerification
-          email={verificationEmail}
-          onVerificationComplete={handleVerificationComplete}
-          onBack={handleBackToSignup}
-        />
       </div>
     );
   }

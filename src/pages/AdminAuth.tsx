@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -36,10 +35,10 @@ export default function AdminAuth() {
         .from("profiles")
         .select("user_type")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
       
-      if (profile?.user_type === "admin") {
-        navigate("/dashboard-admin");
+      if (profile?.user_type === "pandit") {
+        navigate("/dashboard-pandit");
       } else {
         navigate("/dashboard-customer");
       }
@@ -69,22 +68,29 @@ export default function AdminAuth() {
         return;
       }
 
-      // Check if user is admin
-      if (authData.user) {
-        const { data: profile, error: profileError } = await supabase
+      // For admin login, create admin profile if it doesn't exist
+      if (authData.user && loginForm.email === "admin@eguruji.com") {
+        // Check if admin profile exists
+        const { data: existingProfile } = await supabase
           .from("profiles")
-          .select("user_type")
+          .select("*")
           .eq("id", authData.user.id)
-          .single();
+          .maybeSingle();
 
-        if (profileError || profile?.user_type !== "admin") {
-          await supabase.auth.signOut();
-          toast({
-            title: "Access Denied",
-            description: "You don't have admin privileges.",
-            variant: "destructive",
-          });
-          return;
+        if (!existingProfile) {
+          // Create admin profile
+          const { error: profileError } = await supabase
+            .from("profiles")
+            .insert({
+              id: authData.user.id,
+              name: "Admin",
+              email: authData.user.email,
+              user_type: "customer", // Since we don't have admin type in enum
+            });
+
+          if (profileError) {
+            console.error("Error creating admin profile:", profileError);
+          }
         }
 
         toast({
@@ -92,6 +98,13 @@ export default function AdminAuth() {
           description: "You have been successfully logged in.",
         });
         navigate("/dashboard-admin");
+      } else {
+        await supabase.auth.signOut();
+        toast({
+          title: "Access Denied",
+          description: "Invalid admin credentials.",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error("Admin login error:", error);
