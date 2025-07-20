@@ -10,25 +10,55 @@ export function useAdminAuth() {
     setLoading(true);
     
     try {
-      // Check hardcoded admin credentials
-      if (email === "admin@gmail.com" && password === "admin123") {
-        // Create a mock admin session by setting a flag in localStorage
-        localStorage.setItem('isAdmin', 'true');
-        localStorage.setItem('adminEmail', email);
-        
+      // Use Supabase auth for admin login
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        toast({
+          title: "Login Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        return { success: false, error };
+      }
+
+      // Check if this is an admin user
+      if (data.user && email === "admin@eguruji.com") {
+        // Check if admin profile exists, create if not
+        const { data: existingProfile } = await supabase
+          .from("admin_profiles")
+          .select("*")
+          .eq("id", data.user.id)
+          .maybeSingle();
+
+        if (!existingProfile) {
+          await supabase
+            .from("admin_profiles")
+            .insert({
+              id: data.user.id,
+              name: "Admin",
+              email: data.user.email || email,
+            });
+        }
+
         toast({
           title: "Success",
           description: "Admin login successful",
         });
 
-        return { success: true, data: { user: { email, id: 'admin-user' } } };
+        return { success: true, data };
       } else {
+        // Not an admin, sign out
+        await supabase.auth.signOut();
         toast({
-          title: "Login Failed",
+          title: "Access Denied",
           description: "Invalid admin credentials",
           variant: "destructive",
         });
-        return { success: false, error: new Error("Invalid credentials") };
+        return { success: false, error: new Error("Invalid admin credentials") };
       }
     } catch (error) {
       console.error("Admin login error:", error);

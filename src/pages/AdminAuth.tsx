@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -31,16 +32,28 @@ export default function AdminAuth() {
     if (!user) return;
     
     try {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("user_type")
+      // Check if user exists in admin_profiles table
+      const { data: adminProfile } = await supabase
+        .from("admin_profiles")
+        .select("*")
         .eq("id", user.id)
         .maybeSingle();
       
-      if (profile?.user_type === "pandit") {
-        navigate("/dashboard-pandit");
+      if (adminProfile) {
+        navigate("/dashboard-admin");
       } else {
-        navigate("/dashboard-customer");
+        // Check regular profiles
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("user_type")
+          .eq("id", user.id)
+          .maybeSingle();
+        
+        if (profile?.user_type === "pandit") {
+          navigate("/dashboard-pandit");
+        } else {
+          navigate("/dashboard-customer");
+        }
       }
     } catch (error) {
       console.error("Error checking admin status:", error);
@@ -68,11 +81,11 @@ export default function AdminAuth() {
         return;
       }
 
-      // For admin login, create admin profile if it doesn't exist
+      // For admin login, check if this is the admin email
       if (authData.user && loginForm.email === "admin@eguruji.com") {
         // Check if admin profile exists
         const { data: existingProfile } = await supabase
-          .from("profiles")
+          .from("admin_profiles")
           .select("*")
           .eq("id", authData.user.id)
           .maybeSingle();
@@ -80,16 +93,21 @@ export default function AdminAuth() {
         if (!existingProfile) {
           // Create admin profile
           const { error: profileError } = await supabase
-            .from("profiles")
+            .from("admin_profiles")
             .insert({
               id: authData.user.id,
               name: "Admin",
-              email: authData.user.email,
-              user_type: "customer", // Since we don't have admin type in enum
+              email: authData.user.email || loginForm.email,
             });
 
           if (profileError) {
             console.error("Error creating admin profile:", profileError);
+            toast({
+              title: "Profile Error",
+              description: "Failed to create admin profile.",
+              variant: "destructive",
+            });
+            return;
           }
         }
 

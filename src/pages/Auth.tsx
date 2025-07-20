@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,6 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/hooks/useSession";
 import { Eye, EyeOff, Mail, Lock, User, MapPin, Award, FileText, Phone } from "lucide-react";
-import OTPVerification from "@/components/OTPVerification";
 
 export default function AuthPage() {
   const navigate = useNavigate();
@@ -52,8 +52,6 @@ export default function AuthPage() {
             
           if (data?.user_type === "pandit") {
             navigate("/dashboard-pandit");
-          } else if (data?.user_type === "admin") {
-            navigate("/dashboard-admin");
           } else {
             navigate("/dashboard-customer");
           }
@@ -164,6 +162,7 @@ export default function AuthPage() {
       });
 
       if (error) {
+        console.error("Signup error:", error);
         toast({
           title: "Signup Failed",
           description: error.message,
@@ -172,16 +171,18 @@ export default function AuthPage() {
         return;
       }
 
-      toast({
-        title: "Account Created!",
-        description: "Your account has been created successfully. You can verify your email later.",
-      });
-      
-      // Skip verification for now and redirect based on role
-      if (selectedRole === "pandit") {
-        navigate("/dashboard-pandit");
-      } else {
-        navigate("/dashboard-customer");
+      if (data.user) {
+        toast({
+          title: "Account Created!",
+          description: "Your account has been created successfully.",
+        });
+        
+        // Redirect based on role
+        if (selectedRole === "pandit") {
+          navigate("/dashboard-pandit");
+        } else {
+          navigate("/dashboard-customer");
+        }
       }
     } catch (error) {
       console.error("Signup error:", error);
