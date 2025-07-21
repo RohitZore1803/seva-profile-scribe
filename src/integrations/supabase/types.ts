@@ -83,8 +83,13 @@ export type Database = {
           duration_hours: number | null
           fromdate: string
           id: string
+          invoice_number: string | null
           location: string | null
+          notification_sent_at: string | null
           pandit_id: string | null
+          payment_method: string | null
+          payment_reference: string | null
+          payment_status: string | null
           phone: string | null
           preferred_time: string | null
           service_id: number | null
@@ -102,8 +107,13 @@ export type Database = {
           duration_hours?: number | null
           fromdate: string
           id?: string
+          invoice_number?: string | null
           location?: string | null
+          notification_sent_at?: string | null
           pandit_id?: string | null
+          payment_method?: string | null
+          payment_reference?: string | null
+          payment_status?: string | null
           phone?: string | null
           preferred_time?: string | null
           service_id?: number | null
@@ -121,8 +131,13 @@ export type Database = {
           duration_hours?: number | null
           fromdate?: string
           id?: string
+          invoice_number?: string | null
           location?: string | null
+          notification_sent_at?: string | null
           pandit_id?: string | null
+          payment_method?: string | null
+          payment_reference?: string | null
+          payment_status?: string | null
           phone?: string | null
           preferred_time?: string | null
           service_id?: number | null
@@ -278,7 +293,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_invoice_number: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       user_type: "pandit" | "customer"
