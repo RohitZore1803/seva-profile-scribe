@@ -1,4 +1,6 @@
 
+import { supabase } from "@/integrations/supabase/client";
+
 export const cleanupAuthState = () => {
   console.log("Cleaning up auth state...");
   

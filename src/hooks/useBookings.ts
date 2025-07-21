@@ -67,7 +67,21 @@ export function useBookings() {
         return;
       }
 
-      setBookings(data || []);
+      // Clean the data to ensure proper types
+      const cleanBookings: Booking[] = (data || []).map((booking: any) => ({
+        ...booking,
+        services: booking.services && typeof booking.services === 'object' &&
+                 'name' in booking.services && 'price' in booking.services
+                 ? booking.services
+                 : null,
+        profiles: booking.profiles && typeof booking.profiles === 'object' &&
+                 'name' in booking.profiles && 'email' in booking.profiles
+                 ? booking.profiles
+                 : null,
+      }));
+
+      console.log("Fetched bookings:", cleanBookings);
+      setBookings(cleanBookings);
     } catch (error) {
       console.error("Error in fetchBookings:", error);
     } finally {
@@ -88,14 +102,26 @@ export function useBookings() {
     try {
       console.log("Creating booking with data:", bookingData);
       
+      // Ensure required fields are present and properly typed
+      const payload = {
+        created_by: user.id,
+        service_id: bookingData.service_id || null,
+        fromdate: bookingData.fromdate || new Date().toISOString(),
+        todate: bookingData.todate || new Date().toISOString(),
+        location: bookingData.location || null,
+        address: bookingData.address || null,
+        phone: bookingData.phone || null,
+        special_requirements: bookingData.special_requirements || null,
+        preferred_time: bookingData.preferred_time || null,
+        duration_hours: bookingData.duration_hours || 2,
+        total_amount: bookingData.total_amount || null,
+        status: 'pending',
+        payment_status: 'pending',
+      };
+
       const { data, error } = await supabase
         .from("bookings")
-        .insert([{
-          ...bookingData,
-          created_by: user.id,
-          status: 'pending',
-          payment_status: 'pending',
-        }])
+        .insert([payload])
         .select()
         .single();
 
