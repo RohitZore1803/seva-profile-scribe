@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -136,65 +135,163 @@ export default function AuthPage() {
     }
   };
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+  // IMPROVED SIGNUP FUNCTION WITH PROPER ERROR HANDLING
+const handleSignup = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setIsLoading(true);
 
-    try {
-      const redirectUrl = `${window.location.origin}/`;
-      
-      const { data, error } = await supabase.auth.signUp({
-        email: signupForm.email,
-        password: signupForm.password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            name: signupForm.name,
-            user_type: selectedRole,
-            phone: signupForm.phone,
-            address: signupForm.address,
-            ...(selectedRole === "pandit" && {
-              expertise: signupForm.expertise,
-              aadhar_number: signupForm.aadhar_number,
-            }),
-          },
-        },
+  try {
+    // Validate form data before proceeding
+    if (!signupForm.name || !signupForm.email || !signupForm.password) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
       });
+      return;
+    }
 
-      if (error) {
-        console.error("Signup error:", error);
+    // Check if user already exists before creating
+    const { data: existingUser } = await supabase
+      .from('profiles')
+      .select('email')
+      .eq('email', signupForm.email)
+      .maybeSingle();
+
+    if (existingUser) {
+      toast({
+        title: "Account Exists",
+        description: "An account with this email already exists. Please try logging in instead.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const redirectUrl = `${window.location.origin}/`;
+    
+    // Step 1: Create the auth user
+    const { data, error } = await supabase.auth.signUp({
+      email: signupForm.email,
+      password: signupForm.password,
+      options: {
+        emailRedirectTo: redirectUrl,
+        data: {
+          name: signupForm.name,
+          user_type: selectedRole,
+          phone: signupForm.phone || null,
+          address: signupForm.address || null,
+          expertise: selectedRole === "pandit" ? signupForm.expertise || null : null,
+          aadhar_number: selectedRole === "pandit" ? signupForm.aadhar_number || null : null,
+        }
+      },
+    });
+
+    if (error) {
+      console.error("Signup error:", error);
+      
+      // Handle specific error types
+      if (error.message.includes("already registered")) {
+        toast({
+          title: "Account Exists",
+          description: "This email is already registered. Please try logging in instead.",
+          variant: "destructive",
+        });
+      } else {
         toast({
           title: "Signup Failed",
           description: error.message,
           variant: "destructive",
         });
+      }
+      return;
+    }
+
+    if (data.user) {
+      // Step 2: Create profile record (this should be handled by database trigger)
+      // But we'll add it as a fallback
+      const profileData = {
+        id: data.user.id,
+        name: signupForm.name,
+        email: signupForm.email,
+        phone: signupForm.phone || null,
+        address: signupForm.address || null,
+        user_type: selectedRole,
+        expertise: selectedRole === "pandit" ? signupForm.expertise || null : null,
+        aadhar_number: selectedRole === "pandit" ? signupForm.aadhar_number || null : null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      console.log("Creating profile with data:", profileData);
+
+      // Wait a bit for the auth user to be fully created
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Try to create profile with better error handling
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert([profileData], {
+          onConflict: 'id',
+          ignoreDuplicates: false
+        });
+
+      if (profileError) {
+        console.error("Profile creation error:", profileError);
+        
+        // Don't try to delete user from client side - let user know to contact support
+        toast({
+          title: "Profile Creation Failed",
+          description: `Your account was created but profile setup failed. Please contact support. Error: ${profileError.message}`,
+          variant: "destructive",
+        });
         return;
       }
 
-      if (data.user) {
-        toast({
-          title: "Account Created!",
-          description: "Your account has been created successfully.",
-        });
-        
-        // Redirect based on role
+      toast({
+        title: "Account Created!",
+        description: data.user.email_confirmed_at ? 
+          "Your account has been created successfully." : 
+          "Account created! Please check your email to verify your account.",
+      });
+      
+      // Only redirect if email is confirmed or if using a development setup
+      if (data.user.email_confirmed_at || process.env.NODE_ENV === 'development') {
         if (selectedRole === "pandit") {
           navigate("/dashboard-pandit");
         } else {
           navigate("/dashboard-customer");
         }
       }
-    } catch (error) {
-      console.error("Signup error:", error);
+    }
+  } catch (error) {
+    console.error("Signup error:", error);
+    
+    // Handle network errors
+    if (error instanceof Error) {
+      if (error.message.includes('fetch')) {
+        toast({
+          title: "Network Error",
+          description: "Please check your internet connection and try again.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Signup Failed",
+          description: error.message || "An unexpected error occurred. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } else {
       toast({
         title: "Signup Failed",
         description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
-  };
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   if (loading) {
     return (
