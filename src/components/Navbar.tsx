@@ -1,3 +1,4 @@
+
 import { Link, useLocation } from "react-router-dom";
 import { useSession } from "@/hooks/useSession";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -67,6 +68,9 @@ const Navbar = () => {
   const navItems = [
     { name: "Home", href: "/" },
     { name: "Services", href: "/services" },
+    { name: "Live Streams", href: "/live-streams" },
+    { name: "Astrology", href: "/astrology" },
+    { name: "Loyalty", href: "/loyalty" },
     { name: "About Us", href: "/about" },
     { name: "Contact", href: "/contact" },
   ];

@@ -3,11 +3,13 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, MapPin, User, Edit, Phone, Mail } from "lucide-react";
+import { Calendar, Clock, MapPin, User, Edit, Phone, Mail, Star, Gift } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
+import { useLoyaltyProgram } from "@/hooks/useLoyaltyProgram";
 import EditCustomerProfileModal from "@/components/EditCustomerProfileModal";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Link } from "react-router-dom";
 
 interface Booking {
   id: string;
@@ -27,6 +29,7 @@ interface Booking {
 
 export default function DashboardCustomer() {
   const { profile, loading: profileLoading, updateProfile } = useProfile();
+  const { loyaltyProgram } = useLoyaltyProgram();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -87,6 +90,19 @@ export default function DashboardCustomer() {
     return `₹${(price / 100).toLocaleString()}`;
   };
 
+  const getTierColor = (tier: string) => {
+    switch (tier) {
+      case "platinum":
+        return "bg-purple-100 text-purple-800";
+      case "gold":
+        return "bg-yellow-100 text-yellow-800";
+      case "silver":
+        return "bg-gray-100 text-gray-800";
+      default:
+        return "bg-orange-100 text-orange-800";
+    }
+  };
+
   if (profileLoading || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center">
@@ -110,7 +126,7 @@ export default function DashboardCustomer() {
 
           <div className="grid lg:grid-cols-3 gap-8">
             {/* Profile Section */}
-            <div className="lg:col-span-1">
+            <div className="lg:col-span-1 space-y-6">
               <Card className="bg-white/80 backdrop-blur-sm border-orange-200">
                 <CardHeader className="text-center pb-4">
                   <div className="flex flex-col items-center space-y-4">
@@ -155,6 +171,46 @@ export default function DashboardCustomer() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Loyalty Program Card */}
+              {loyaltyProgram && (
+                <Card className="bg-white/80 backdrop-blur-sm border-orange-200">
+                  <CardHeader>
+                    <CardTitle className="text-lg text-orange-800 flex items-center gap-2">
+                      <Gift className="w-5 h-5" />
+                      Loyalty Program
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-orange-600">Current Tier</span>
+                      <Badge className={getTierColor(loyaltyProgram.tier_level)}>
+                        {loyaltyProgram.tier_level.toUpperCase()}
+                      </Badge>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-orange-600">Points Balance</span>
+                      <div className="flex items-center gap-1">
+                        <Star className="w-4 h-4 text-orange-500" />
+                        <span className="font-bold text-orange-800">{loyaltyProgram.points_balance}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-orange-600">Total Earned</span>
+                      <span className="font-medium text-orange-800">{loyaltyProgram.total_points_earned}</span>
+                    </div>
+                    
+                    <Button asChild className="w-full bg-orange-600 hover:bg-orange-700 text-white">
+                      <Link to="/loyalty">
+                        <Gift className="w-4 h-4 mr-2" />
+                        View Rewards
+                      </Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
             </div>
 
             {/* Bookings Section */}
