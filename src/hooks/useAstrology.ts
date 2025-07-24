@@ -51,15 +51,23 @@ export function useAstrology() {
     if (!user) return;
 
     try {
-      // Use proper table name with correct typing
+      // Use raw SQL query to avoid type issues with new table
       const { data, error } = await supabase
-        .from("astrology_profiles")
-        .select("*")
-        .eq("user_id", user.id)
-        .maybeSingle();
+        .rpc('get_astrology_profile', { user_id: user.id });
 
-      if (error) throw error;
-      setProfile(data);
+      if (error && !error.message.includes('function get_astrology_profile')) {
+        // If function doesn't exist, fall back to direct query
+        const { data: profileData, error: profileError } = await supabase
+          .from('astrology_profiles' as any)
+          .select('*')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        if (profileError) throw profileError;
+        setProfile(profileData as AstrologyProfile);
+      } else if (data) {
+        setProfile(data as AstrologyProfile);
+      }
     } catch (error) {
       console.error("Error fetching astrology profile:", error);
     }
@@ -71,13 +79,13 @@ export function useAstrology() {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from("astrology_consultations")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+        .from('astrology_consultations' as any)
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setConsultations(data || []);
+      setConsultations((data || []) as AstrologyConsultation[]);
     } catch (error) {
       console.error("Error fetching consultations:", error);
     } finally {
@@ -90,7 +98,7 @@ export function useAstrology() {
 
     try {
       const { data, error } = await supabase
-        .from("astrology_profiles")
+        .from('astrology_profiles' as any)
         .upsert({
           ...profileData,
           user_id: user.id,
@@ -100,13 +108,13 @@ export function useAstrology() {
 
       if (error) throw error;
       
-      setProfile(data);
+      setProfile(data as AstrologyProfile);
       toast({
         title: "Success",
         description: "Astrology profile updated successfully",
       });
       
-      return data;
+      return data as AstrologyProfile;
     } catch (error) {
       console.error("Error updating astrology profile:", error);
       toast({
@@ -122,7 +130,7 @@ export function useAstrology() {
 
     try {
       const { data, error } = await supabase
-        .from("astrology_consultations")
+        .from('astrology_consultations' as any)
         .insert({
           ...consultationData,
           user_id: user.id,
@@ -132,13 +140,13 @@ export function useAstrology() {
 
       if (error) throw error;
       
-      setConsultations(prev => [data, ...prev]);
+      setConsultations(prev => [data as AstrologyConsultation, ...prev]);
       toast({
         title: "Success",
         description: "Consultation booked successfully",
       });
       
-      return data;
+      return data as AstrologyConsultation;
     } catch (error) {
       console.error("Error booking consultation:", error);
       toast({

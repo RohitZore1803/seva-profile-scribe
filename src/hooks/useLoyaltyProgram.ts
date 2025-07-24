@@ -47,7 +47,7 @@ export function useLoyaltyProgram() {
         .from("loyalty_programs")
         .select("*")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
         // Create loyalty program if it doesn't exist
@@ -65,7 +65,7 @@ export function useLoyaltyProgram() {
 
         if (createError) throw createError;
         setLoyaltyProgram(newProgram);
-      } else {
+      } else if (data) {
         setLoyaltyProgram(data);
       }
     } catch (error) {
