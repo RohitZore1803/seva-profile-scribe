@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,20 +8,37 @@ import { useLoyaltyProgram } from "@/hooks/useLoyaltyProgram";
 import LoyaltyDashboard from "@/components/LoyaltyDashboard";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
 import SubscriptionPlans from "@/components/SubscriptionPlans";
+import PaymentModal from "@/components/PaymentModal";
 import { toast } from "@/hooks/use-toast";
 
 export default function Loyalty() {
   const { loyaltyProgram, transactions, loading } = useLoyaltyProgram();
-  const { plans, subscribeToPlan } = useSubscriptions();
+  const { plans } = useSubscriptions();
+  const [paymentModal, setPaymentModal] = useState<{
+    isOpen: boolean;
+    planId: string;
+    amount: number;
+    title: string;
+  }>({ isOpen: false, planId: '', amount: 0, title: '' });
 
   const handleSubscribe = async (planId: string) => {
-    const result = await subscribeToPlan(planId, "credit_card");
-    if (result) {
-      toast({
-        title: "Success",
-        description: "Successfully subscribed to plan!",
+    const plan = plans.find(p => p.id === planId);
+    if (plan) {
+      setPaymentModal({
+        isOpen: true,
+        planId: planId,
+        amount: plan.price_monthly,
+        title: `${plan.name} Subscription`,
       });
     }
+  };
+
+  const handlePaymentComplete = () => {
+    setPaymentModal({ isOpen: false, planId: '', amount: 0, title: '' });
+    toast({
+      title: "Subscription Activated",
+      description: "Your subscription has been successfully activated!",
+    });
   };
 
   const rewardItems = [
@@ -180,6 +198,14 @@ export default function Loyalty() {
               loading={loading}
             />
           </div>
+
+          <PaymentModal
+            isOpen={paymentModal.isOpen}
+            onClose={() => setPaymentModal({ isOpen: false, planId: '', amount: 0, title: '' })}
+            amount={paymentModal.amount}
+            title={paymentModal.title}
+            description="Monthly subscription plan"
+          />
         </div>
       </div>
     </div>

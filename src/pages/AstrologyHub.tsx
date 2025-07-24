@@ -4,9 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Star, Moon, Sun, Calendar, BookOpen } from "lucide-react";
+import { Star, Moon, Sun, Calendar, BookOpen, Sparkles } from "lucide-react";
 import { useAstrology } from "@/hooks/useAstrology";
 import AstrologyProfileForm from "@/components/AstrologyProfileForm";
+import AstrologyReports from "@/components/AstrologyReports";
 import { toast } from "@/hooks/use-toast";
 
 export default function AstrologyHub() {
@@ -27,6 +28,7 @@ export default function AstrologyHub() {
       consultation_type: consultationType,
       price: price,
       duration_minutes: 30,
+      status: 'pending',
     });
   };
 
@@ -42,6 +44,51 @@ export default function AstrologyHub() {
         return "bg-gray-100 text-gray-800";
     }
   };
+
+  const suggestedServices = [
+    {
+      title: "Ganesha Pooja",
+      description: "Remove obstacles and bring prosperity to your life",
+      benefit: "Clears path for success and new beginnings",
+      price: 1500,
+      duration: "2 hours"
+    },
+    {
+      title: "Lakshmi Pooja",
+      description: "Attract wealth and abundance",
+      benefit: "Improves financial situation and brings prosperity",
+      price: 2000,
+      duration: "3 hours"
+    },
+    {
+      title: "Navagraha Pooja",
+      description: "Balance planetary influences in your life",
+      benefit: "Reduces malefic effects and strengthens positive energies",
+      price: 2500,
+      duration: "4 hours"
+    },
+    {
+      title: "Saraswati Pooja",
+      description: "Enhance knowledge and wisdom",
+      benefit: "Improves learning abilities and career growth",
+      price: 1200,
+      duration: "2 hours"
+    },
+    {
+      title: "Hanuman Pooja",
+      description: "Gain strength and courage",
+      benefit: "Provides protection and removes fear",
+      price: 1000,
+      duration: "1.5 hours"
+    },
+    {
+      title: "Mahamrityunjaya Jaap",
+      description: "For health and longevity",
+      benefit: "Promotes healing and protects from illness",
+      price: 3000,
+      duration: "5 hours"
+    }
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50">
@@ -153,102 +200,69 @@ export default function AstrologyHub() {
             </TabsContent>
 
             <TabsContent value="reports">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Astrology Reports</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-8">
-                    <BookOpen className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                    <h3 className="text-lg font-semibold mb-2">No Reports Available</h3>
-                    <p className="text-gray-600">Complete consultations to receive personalized reports</p>
-                  </div>
-                </CardContent>
-              </Card>
+              {profile ? (
+                <AstrologyReports profile={profile} />
+              ) : (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Astrology Reports</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-8">
+                      <BookOpen className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                      <h3 className="text-lg font-semibold mb-2">Complete Your Profile First</h3>
+                      <p className="text-gray-600">Fill out your astrology profile to get personalized reports</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
 
             <TabsContent value="services">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Birth Chart Reading</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-600 mb-4">
-                      Get a detailed analysis of your birth chart and personality insights.
-                    </p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-2xl font-bold text-orange-600">₹999</span>
-                      <Button
-                        onClick={() => handleBookConsultation("Birth Chart Reading", 999)}
-                        className="bg-orange-600 hover:bg-orange-700"
-                      >
-                        Book Now
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Relationship Compatibility</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-600 mb-4">
-                      Analyze compatibility with your partner through astrology.
-                    </p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-2xl font-bold text-orange-600">₹1499</span>
-                      <Button
-                        onClick={() => handleBookConsultation("Relationship Compatibility", 1499)}
-                        className="bg-orange-600 hover:bg-orange-700"
-                      >
-                        Book Now
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Career Guidance</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-600 mb-4">
-                      Discover your ideal career path based on astrological insights.
-                    </p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-2xl font-bold text-orange-600">₹1299</span>
-                      <Button
-                        onClick={() => handleBookConsultation("Career Guidance", 1299)}
-                        className="bg-orange-600 hover:bg-orange-700"
-                      >
-                        Book Now
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Health Predictions</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-600 mb-4">
-                      Get insights about your health and wellness through astrology.
-                    </p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-2xl font-bold text-orange-600">₹899</span>
-                      <Button
-                        onClick={() => handleBookConsultation("Health Predictions", 899)}
-                        className="bg-orange-600 hover:bg-orange-700"
-                      >
-                        Book Now
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-orange-600" />
+                    Recommended Services for Better Life
+                  </CardTitle>
+                  <p className="text-gray-600 mt-2">
+                    Based on astrological insights, these services can help improve your life and solve various issues
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {suggestedServices.map((service, index) => (
+                      <Card key={index} className="border-l-4 border-orange-200">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-lg">{service.title}</CardTitle>
+                          <p className="text-sm text-gray-600">{service.description}</p>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            <div className="p-3 bg-green-50 rounded-lg">
+                              <p className="text-sm font-medium text-green-800">Benefit:</p>
+                              <p className="text-sm text-green-700">{service.benefit}</p>
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="text-sm text-gray-600">Duration: {service.duration}</p>
+                                <p className="text-lg font-bold text-orange-600">₹{service.price}</p>
+                              </div>
+                              <Button
+                                onClick={() => handleBookConsultation(service.title, service.price)}
+                                className="bg-orange-600 hover:bg-orange-700"
+                              >
+                                Book Service
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         </div>

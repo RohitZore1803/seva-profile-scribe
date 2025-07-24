@@ -6,16 +6,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Video } from "lucide-react";
+import { Plus, Video, Edit, Eye, Play } from "lucide-react";
 import { useLiveStreams } from "@/hooks/useLiveStreams";
 import { useProfile } from "@/hooks/useProfile";
 import LiveStreamCard from "@/components/LiveStreamCard";
+import LiveStreamEditModal from "@/components/LiveStreamEditModal";
 import { toast } from "@/hooks/use-toast";
 
 export default function LiveStreams() {
   const { profile } = useProfile();
-  const { streams, loading, createStream, fetchStreams } = useLiveStreams();
+  const { streams, loading, createStream, updateStream, fetchStreams } = useLiveStreams();
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [editingStream, setEditingStream] = useState(null);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -54,10 +56,27 @@ export default function LiveStreams() {
   };
 
   const handleJoinStream = (streamId: string) => {
-    // This would typically open a video streaming interface
+    const stream = streams.find(s => s.id === streamId);
+    if (stream?.stream_url) {
+      window.open(stream.stream_url, '_blank');
+    } else {
+      toast({
+        title: "Stream Not Available",
+        description: "This stream is not yet available for viewing",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleStartStream = (streamId: string) => {
+    updateStream(streamId, { 
+      status: 'live', 
+      started_at: new Date().toISOString(),
+      viewer_count: 0 
+    });
     toast({
-      title: "Stream Access",
-      description: "Opening stream viewer...",
+      title: "Stream Started",
+      description: "Your live stream is now active!",
     });
   };
 
@@ -170,11 +189,76 @@ export default function LiveStreams() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {streams.map((stream) => (
-              <LiveStreamCard
-                key={stream.id}
-                stream={stream}
-                onJoin={handleJoinStream}
-              />
+              <Card key={stream.id} className="overflow-hidden">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <CardTitle className="text-lg">{stream.title}</CardTitle>
+                      <p className="text-sm text-gray-600 mt-1">{stream.description}</p>
+                    </div>
+                    {profile?.user_type === 'pandit' && profile.id === stream.pandit_id && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setEditingStream(stream)}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                </CardHeader>
+                
+                <CardContent className="pt-0">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-500">Status:</span>
+                      <span className={`px-2 py-1 rounded text-xs ${
+                        stream.status === 'live' ? 'bg-red-100 text-red-700' :
+                        stream.status === 'scheduled' ? 'bg-yellow-100 text-yellow-700' :
+                        'bg-gray-100 text-gray-700'
+                      }`}>
+                        {stream.status}
+                      </span>
+                    </div>
+                    
+                    {stream.scheduled_at && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-500">Scheduled:</span>
+                        <span>{new Date(stream.scheduled_at).toLocaleString()}</span>
+                      </div>
+                    )}
+                    
+                    {stream.is_premium && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-500">Price:</span>
+                        <span className="font-semibold text-orange-600">₹{stream.price}</span>
+                      </div>
+                    )}
+                    
+                    <div className="flex gap-2 mt-4">
+                      {profile?.user_type === 'pandit' && profile.id === stream.pandit_id ? (
+                        <Button
+                          onClick={() => handleStartStream(stream.id)}
+                          disabled={stream.status === 'live'}
+                          className="flex-1 bg-orange-600 hover:bg-orange-700"
+                        >
+                          <Play className="w-4 h-4 mr-2" />
+                          {stream.status === 'live' ? 'Live' : 'Start Stream'}
+                        </Button>
+                      ) : (
+                        <Button
+                          onClick={() => handleJoinStream(stream.id)}
+                          disabled={stream.status !== 'live'}
+                          className="flex-1 bg-orange-600 hover:bg-orange-700"
+                        >
+                          <Eye className="w-4 h-4 mr-2" />
+                          Watch
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
 
@@ -186,6 +270,15 @@ export default function LiveStreams() {
                 <p className="text-gray-600">Check back later for live spiritual sessions</p>
               </CardContent>
             </Card>
+          )}
+
+          {editingStream && (
+            <LiveStreamEditModal
+              stream={editingStream}
+              isOpen={!!editingStream}
+              onClose={() => setEditingStream(null)}
+              onUpdate={updateStream}
+            />
           )}
         </div>
       </div>
