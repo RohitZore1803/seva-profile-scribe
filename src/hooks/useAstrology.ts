@@ -51,23 +51,29 @@ export function useAstrology() {
     if (!user) return;
 
     try {
+      setLoading(true);
       const { data: profileData, error: profileError } = await supabase
         .from('astrology_profiles')
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
       
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error("Error fetching astrology profile:", profileError);
+        return;
+      }
+      
       setProfile(profileData);
     } catch (error) {
       console.error("Error fetching astrology profile:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const fetchConsultations = async () => {
     if (!user) return;
 
-    setLoading(true);
     try {
       const { data, error } = await supabase
         .from('astrology_consultations')
@@ -75,22 +81,30 @@ export function useAstrology() {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching consultations:", error);
+        return;
+      }
+      
       setConsultations(data || []);
     } catch (error) {
       console.error("Error fetching consultations:", error);
-    } finally {
-      setLoading(false);
     }
   };
 
   const createOrUpdateProfile = async (profileData: Partial<AstrologyProfile>) => {
-    if (!user) return;
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to save your astrology profile",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    // Ensure required fields are present
     if (!profileData.birth_date || !profileData.birth_place) {
       toast({
-        title: "Error",
+        title: "Missing Information",
         description: "Birth date and place are required",
         variant: "destructive",
       });
@@ -98,25 +112,47 @@ export function useAstrology() {
     }
 
     try {
+      setLoading(true);
+      
       const dataToUpsert = {
-        ...profileData,
         user_id: user.id,
         birth_date: profileData.birth_date,
         birth_place: profileData.birth_place,
+        birth_time: profileData.birth_time || null,
+        latitude: profileData.latitude || null,
+        longitude: profileData.longitude || null,
+        zodiac_sign: profileData.zodiac_sign || null,
+        moon_sign: profileData.moon_sign || null,
+        rising_sign: profileData.rising_sign || null,
+        updated_at: new Date().toISOString(),
       };
+
+      console.log("Saving astrology profile:", dataToUpsert);
 
       const { data, error } = await supabase
         .from('astrology_profiles')
-        .upsert(dataToUpsert)
+        .upsert(dataToUpsert, {
+          onConflict: 'user_id'
+        })
         .select()
         .single();
 
-      if (error) throw error;
-      
+      if (error) {
+        console.error("Error saving astrology profile:", error);
+        toast({
+          title: "Save Failed",
+          description: error.message || "Failed to save astrology profile",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log("Astrology profile saved successfully:", data);
       setProfile(data);
+      
       toast({
-        title: "Success",
-        description: "Astrology profile updated successfully",
+        title: "Profile Saved",
+        description: "Your astrology profile has been saved successfully!",
       });
       
       return data;
@@ -124,19 +160,27 @@ export function useAstrology() {
       console.error("Error updating astrology profile:", error);
       toast({
         title: "Error",
-        description: "Failed to update astrology profile",
+        description: "An unexpected error occurred while saving your profile",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
   const bookConsultation = async (consultationData: Partial<AstrologyConsultation>) => {
-    if (!user) return;
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to book a consultation",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    // Ensure required fields are present
     if (!consultationData.consultation_type || !consultationData.price) {
       toast({
-        title: "Error",
+        title: "Missing Information",
         description: "Consultation type and price are required",
         variant: "destructive",
       });
@@ -144,11 +188,16 @@ export function useAstrology() {
     }
 
     try {
+      setLoading(true);
+      
       const dataToInsert = {
-        ...consultationData,
         user_id: user.id,
         consultation_type: consultationData.consultation_type,
         price: consultationData.price,
+        duration_minutes: consultationData.duration_minutes || 30,
+        status: 'pending',
+        scheduled_at: consultationData.scheduled_at || null,
+        notes: consultationData.notes || null,
       };
 
       const { data, error } = await supabase
@@ -157,12 +206,20 @@ export function useAstrology() {
         .select()
         .single();
 
-      if (error) throw error;
-      
+      if (error) {
+        console.error("Error booking consultation:", error);
+        toast({
+          title: "Booking Failed",
+          description: error.message || "Failed to book consultation",
+          variant: "destructive",
+        });
+        return;
+      }
+
       setConsultations(prev => [data, ...prev]);
       toast({
-        title: "Success",
-        description: "Consultation booked successfully",
+        title: "Consultation Booked",
+        description: "Your consultation has been booked successfully!",
       });
       
       return data;
@@ -170,9 +227,11 @@ export function useAstrology() {
       console.error("Error booking consultation:", error);
       toast({
         title: "Error",
-        description: "Failed to book consultation",
+        description: "An unexpected error occurred while booking your consultation",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
 

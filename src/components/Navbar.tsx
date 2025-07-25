@@ -1,262 +1,167 @@
 
-import { Link, useLocation } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Menu, X, Star, BookOpen, Users, Calendar, Sparkles } from "lucide-react";
 import { useSession } from "@/hooks/useSession";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LogIn, User, Menu, LogOut } from "lucide-react";
-import { useState, useEffect } from "react";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-} from "@/components/ui/navigation-menu";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
-const Navbar = () => {
-  const { user } = useSession();
-  const location = useLocation();
-  const isMobile = useIsMobile();
+export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
-  const [userType, setUserType] = useState<string | null>(null);
-
-  // Fetch user type when user is available
-  useEffect(() => {
-    if (user) {
-      const fetchUserType = async () => {
-        try {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("user_type")
-            .eq("id", user.id)
-            .single();
-          
-          if (profile) {
-            setUserType(profile.user_type);
-          } else {
-            setUserType("customer");
-          }
-        } catch (error) {
-          console.error("Error fetching user type:", error);
-          setUserType("customer");
-        }
-      };
-      
-      fetchUserType();
-    } else {
-      setUserType(null);
-    }
-  }, [user]);
-
-  const navItems = [
-    { name: "Home", href: "/" },
-    { name: "Services", href: "/services" },
-    { name: "Live Streams", href: "/live-streams" },
-    { name: "Astrology", href: "/astrology" },
-    { name: "Loyalty", href: "/loyalty" },
-    { name: "About Us", href: "/about" },
-    { name: "Contact", href: "/contact" },
-  ];
+  const { user } = useSession();
+  const navigate = useNavigate();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    window.location.href = "/";
+    navigate("/");
   };
 
-  const getDashboardUrl = () => {
-    if (userType === "admin") return "/dashboard-admin";
-    if (userType === "pandit") return "/dashboard-pandit";
-    return "/dashboard-customer";
-  };
+  const navigationItems = [
+    { name: "Services", href: "/services", icon: BookOpen },
+    { name: "Astrology", href: "/astrology", icon: Star },
+    { name: "Live Streams", href: "/live-streams", icon: Calendar },
+    { name: "About", href: "/about", icon: Users },
+  ];
 
-  const MobileNav = () => (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <SheetTrigger asChild>
-        <button className="md:hidden p-2">
-          <Menu size={24} className="text-orange-600 dark:text-orange-400" />
-        </button>
-      </SheetTrigger>
-      <SheetContent side="left" className="w-80">
-        <SheetHeader>
-          <SheetTitle className="text-orange-600 dark:text-orange-400 font-playfair text-xl">E-GURUJI</SheetTitle>
-        </SheetHeader>
-        <nav className="flex flex-col gap-4 mt-8">
-          {navItems.map((item) => (
-            <Link
-              key={item.name}
-              to={item.href}
-              onClick={() => setIsOpen(false)}
-              className={`text-lg py-3 px-4 rounded-lg transition-colors ${
-                location.pathname === item.href
-                  ? "bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 font-semibold"
-                  : "text-gray-600 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900"
-              }`}
-            >
-              {item.name}
-            </Link>
-          ))}
-          <div className="border-t pt-4 mt-4">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-sm text-gray-600 dark:text-gray-400">Theme</span>
-              <ThemeToggle />
+  return (
+    <nav className="bg-white/95 backdrop-blur-md shadow-lg sticky top-0 z-50 border-b border-orange-100">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          {/* Logo */}
+          <Link to="/" className="flex items-center space-x-2">
+            <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-500 rounded-lg flex items-center justify-center">
+              <Sparkles className="w-6 h-6 text-white" />
             </div>
-            {!user ? (
-              <div className="flex flex-col gap-3">
-                <Link
-                  to="/auth?role=customer"
-                  onClick={() => setIsOpen(false)}
-                  className="flex items-center gap-2 text-sm bg-orange-50 dark:bg-orange-900 px-4 py-3 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-800"
-                >
-                  <User size={16} />
-                  Customer Login
+            <span className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
+              Pooja Path
+            </span>
+          </Link>
+
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center space-x-8">
+            {navigationItems.map((item) => (
+              <Link
+                key={item.name}
+                to={item.href}
+                className="flex items-center space-x-1 text-gray-700 hover:text-orange-600 transition-colors duration-200 font-medium"
+              >
+                <item.icon className="w-4 h-4" />
+                <span>{item.name}</span>
+              </Link>
+            ))}
+          </div>
+
+          {/* Auth Buttons */}
+          <div className="hidden md:flex items-center space-x-4">
+            {user ? (
+              <div className="flex items-center space-x-3">
+                <Link to="/dashboard">
+                  <Button variant="outline" className="border-orange-200 text-orange-700 hover:bg-orange-50">
+                    Dashboard
+                  </Button>
                 </Link>
-                <Link
-                  to="/auth?role=pandit"
-                  onClick={() => setIsOpen(false)}
-                  className="flex items-center gap-2 text-sm bg-orange-50 dark:bg-orange-900 px-4 py-3 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-800"
+                <Button
+                  onClick={handleLogout}
+                  variant="ghost"
+                  className="text-gray-600 hover:text-orange-600"
                 >
-                  <LogIn size={16} />
-                  Pandit Login
-                </Link>
-                <Link
-                  to="/admin-auth"
-                  onClick={() => setIsOpen(false)}
-                  className="flex items-center gap-2 text-sm bg-red-50 dark:bg-red-900 px-4 py-3 rounded-lg hover:bg-red-100 dark:hover:bg-red-800 text-red-700 dark:text-red-300"
-                >
-                  <LogIn size={16} />
-                  Admin Login
-                </Link>
+                  Logout
+                </Button>
               </div>
             ) : (
-              <div className="flex flex-col gap-3">
-                <Link
-                  to={getDashboardUrl()}
-                  onClick={() => setIsOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-900"
-                >
-                  <Avatar className="w-8 h-8">
-                    <AvatarImage src={user.user_metadata?.profile_image_url} alt={user.user_metadata?.name || "avatar"} />
-                    <AvatarFallback>{user.user_metadata?.name?.charAt(0)?.toUpperCase() || "A"}</AvatarFallback>
-                  </Avatar>
-                  <span className="text-sm font-medium">Dashboard</span>
+              <div className="flex items-center space-x-3">
+                <Link to="/auth">
+                  <Button variant="outline" className="border-orange-200 text-orange-700 hover:bg-orange-50">
+                    Login
+                  </Button>
                 </Link>
-                <button
-                  onClick={() => {
-                    setIsOpen(false);
-                    handleLogout();
-                  }}
-                  className="flex items-center gap-2 text-sm bg-red-50 dark:bg-red-900 px-4 py-3 rounded-lg hover:bg-red-100 dark:hover:bg-red-800 text-red-700 dark:text-red-300"
-                >
-                  <LogOut size={16} />
-                  Sign Out
-                </button>
+                <Link to="/auth">
+                  <Button className="bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white">
+                    Get Started
+                  </Button>
+                </Link>
               </div>
             )}
           </div>
-        </nav>
-      </SheetContent>
-    </Sheet>
-  );
 
-  const DesktopNav = () => (
-    <NavigationMenu className="hidden md:flex">
-      <NavigationMenuList className="gap-1">
-        {navItems.map((item) => (
-          <NavigationMenuItem key={item.name}>
-            <NavigationMenuLink asChild>
-              <Link
-                to={item.href}
-                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                  location.pathname === item.href
-                    ? "bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300"
-                    : "text-gray-600 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900"
-                }`}
-              >
-                {item.name}
-              </Link>
-            </NavigationMenuLink>
-          </NavigationMenuItem>
-        ))}
-      </NavigationMenuList>
-    </NavigationMenu>
-  );
+          {/* Mobile menu button */}
+          <div className="md:hidden">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsOpen(!isOpen)}
+              className="text-gray-700"
+            >
+              {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </Button>
+          </div>
+        </div>
 
-  return (
-    <nav className="w-full bg-white dark:bg-gray-950 shadow border-b dark:border-gray-800 px-4 py-3 flex items-center justify-between sticky top-0 z-30">
-      <div className="flex items-center gap-4">
-        <Link to="/" className="flex items-center gap-2">
-          <span className="text-2xl font-bold text-orange-600 dark:text-orange-400 font-playfair tracking-wide">
-            E-GURUJI
-          </span>
-        </Link>
-        <DesktopNav />
-      </div>
-
-      <div className="flex items-center gap-3">
-        {!isMobile && <ThemeToggle />}
-        {!user && !isMobile ? (
-          <>
-            <Link to="/auth?role=customer" className="flex gap-1 items-center text-sm hover:text-orange-700 dark:hover:text-orange-300 bg-orange-50 dark:bg-orange-900 px-3 py-2 rounded-md">
-              <User size={16} />
-              Customer Login
-            </Link>
-            <Link to="/auth?role=pandit" className="flex gap-1 items-center text-sm hover:text-orange-700 dark:hover:text-orange-300 bg-orange-50 dark:bg-orange-900 px-3 py-2 rounded-md">
-              <LogIn size={16} />
-              Pandit Login
-            </Link>
-            <Link to="/admin-auth" className="flex gap-1 items-center text-sm hover:text-red-700 dark:hover:text-red-300 bg-red-50 dark:bg-red-900 px-3 py-2 rounded-md text-red-600 dark:text-red-400">
-              <LogIn size={16} />
-              Admin
-            </Link>
-          </>
-        ) : (
-          user && !isMobile && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="focus:outline-none">
-                  <Avatar className="hover:ring-2 hover:ring-orange-200 dark:hover:ring-orange-700 transition-all">
-                    <AvatarImage src={user.user_metadata?.profile_image_url} alt={user.user_metadata?.name || "avatar"} />
-                    <AvatarFallback>{user.user_metadata?.name?.charAt(0)?.toUpperCase() || "A"}</AvatarFallback>
-                  </Avatar>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem asChild>
-                  <Link to={getDashboardUrl()} className="flex items-center gap-2">
-                    <User size={16} />
-                    Dashboard
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-2 text-red-600 dark:text-red-400">
-                  <LogOut size={16} />
-                  Sign Out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )
+        {/* Mobile Navigation */}
+        {isOpen && (
+          <div className="md:hidden">
+            <div className="px-2 pt-2 pb-3 space-y-1 bg-white/95 backdrop-blur-md border-t border-orange-100">
+              {navigationItems.map((item) => (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className="flex items-center space-x-2 px-3 py-2 text-gray-700 hover:text-orange-600 hover:bg-orange-50 rounded-md transition-colors duration-200"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <item.icon className="w-4 h-4" />
+                  <span>{item.name}</span>
+                </Link>
+              ))}
+              
+              <div className="pt-4 space-y-2">
+                {user ? (
+                  <>
+                    <Link to="/dashboard">
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start border-orange-200 text-orange-700 hover:bg-orange-50"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        Dashboard
+                      </Button>
+                    </Link>
+                    <Button
+                      onClick={() => {
+                        handleLogout();
+                        setIsOpen(false);
+                      }}
+                      variant="ghost"
+                      className="w-full justify-start text-gray-600 hover:text-orange-600"
+                    >
+                      Logout
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Link to="/auth">
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start border-orange-200 text-orange-700 hover:bg-orange-50"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        Login
+                      </Button>
+                    </Link>
+                    <Link to="/auth">
+                      <Button
+                        className="w-full justify-start bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        Get Started
+                      </Button>
+                    </Link>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
         )}
-        <MobileNav />
       </div>
     </nav>
   );
-};
-
-export default Navbar;
+}
