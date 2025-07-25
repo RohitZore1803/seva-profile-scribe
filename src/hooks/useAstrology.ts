@@ -51,23 +51,14 @@ export function useAstrology() {
     if (!user) return;
 
     try {
-      // Use raw SQL query to avoid type issues with new table
-      const { data, error } = await supabase
-        .rpc('get_astrology_profile', { user_id: user.id });
-
-      if (error && !error.message.includes('function get_astrology_profile')) {
-        // If function doesn't exist, fall back to direct query
-        const { data: profileData, error: profileError } = await supabase
-          .from('astrology_profiles' as any)
-          .select('*')
-          .eq('user_id', user.id)
-          .maybeSingle();
-        
-        if (profileError) throw profileError;
-        setProfile(profileData as AstrologyProfile);
-      } else if (data) {
-        setProfile(data as AstrologyProfile);
-      }
+      const { data: profileData, error: profileError } = await supabase
+        .from('astrology_profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (profileError) throw profileError;
+      setProfile(profileData);
     } catch (error) {
       console.error("Error fetching astrology profile:", error);
     }
@@ -79,13 +70,13 @@ export function useAstrology() {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('astrology_consultations' as any)
+        .from('astrology_consultations')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setConsultations((data || []) as AstrologyConsultation[]);
+      setConsultations(data || []);
     } catch (error) {
       console.error("Error fetching consultations:", error);
     } finally {
@@ -98,7 +89,7 @@ export function useAstrology() {
 
     try {
       const { data, error } = await supabase
-        .from('astrology_profiles' as any)
+        .from('astrology_profiles')
         .upsert({
           ...profileData,
           user_id: user.id,
@@ -108,13 +99,13 @@ export function useAstrology() {
 
       if (error) throw error;
       
-      setProfile(data as AstrologyProfile);
+      setProfile(data);
       toast({
         title: "Success",
         description: "Astrology profile updated successfully",
       });
       
-      return data as AstrologyProfile;
+      return data;
     } catch (error) {
       console.error("Error updating astrology profile:", error);
       toast({
@@ -130,7 +121,7 @@ export function useAstrology() {
 
     try {
       const { data, error } = await supabase
-        .from('astrology_consultations' as any)
+        .from('astrology_consultations')
         .insert({
           ...consultationData,
           user_id: user.id,
@@ -140,13 +131,13 @@ export function useAstrology() {
 
       if (error) throw error;
       
-      setConsultations(prev => [data as AstrologyConsultation, ...prev]);
+      setConsultations(prev => [data, ...prev]);
       toast({
         title: "Success",
         description: "Consultation booked successfully",
       });
       
-      return data as AstrologyConsultation;
+      return data;
     } catch (error) {
       console.error("Error booking consultation:", error);
       toast({
@@ -158,12 +149,10 @@ export function useAstrology() {
   };
 
   const generateAstrologicalSummary = (profile: AstrologyProfile) => {
-    // Simple astrological summary generation based on birth date
     const birthDate = new Date(profile.birth_date);
     const month = birthDate.getMonth() + 1;
     const day = birthDate.getDate();
     
-    // Determine zodiac sign
     let zodiacSign = "";
     if ((month === 3 && day >= 21) || (month === 4 && day <= 19)) zodiacSign = "Aries";
     else if ((month === 4 && day >= 20) || (month === 5 && day <= 20)) zodiacSign = "Taurus";
@@ -180,8 +169,8 @@ export function useAstrology() {
     
     return {
       zodiac_sign: zodiacSign,
-      moon_sign: zodiacSign, // Simplified for demo
-      rising_sign: zodiacSign, // Simplified for demo
+      moon_sign: zodiacSign,
+      rising_sign: zodiacSign,
     };
   };
 

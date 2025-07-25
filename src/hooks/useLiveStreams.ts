@@ -8,7 +8,7 @@ export interface LiveStream {
   id: string;
   title: string;
   description?: string;
-  pandit_id: string;
+  pandit_id?: string;
   scheduled_at?: string;
   started_at?: string;
   ended_at?: string;
@@ -16,10 +16,10 @@ export interface LiveStream {
   stream_url?: string;
   stream_key: string;
   recording_url?: string;
-  viewer_count: number;
-  max_viewers: number;
-  is_premium: boolean;
-  price: number;
+  price?: number;
+  is_premium?: boolean;
+  max_viewers?: number;
+  viewer_count?: number;
   created_at: string;
   updated_at: string;
 }
@@ -30,26 +30,23 @@ export function useLiveStreams() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetchStreams();
-  }, []);
+    if (user) {
+      fetchLiveStreams();
+    }
+  }, [user]);
 
-  const fetchStreams = async () => {
+  const fetchLiveStreams = async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from("live_streams")
-        .select("*")
-        .order("created_at", { ascending: false });
+        .from('live_streams')
+        .select('*')
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       setStreams(data || []);
     } catch (error) {
       console.error("Error fetching live streams:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load live streams",
-        variant: "destructive",
-      });
     } finally {
       setLoading(false);
     }
@@ -60,11 +57,11 @@ export function useLiveStreams() {
 
     try {
       const { data, error } = await supabase
-        .from("live_streams")
+        .from('live_streams')
         .insert({
           ...streamData,
           pandit_id: user.id,
-          stream_key: `stream_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          stream_key: `stream_${Date.now()}`,
         })
         .select()
         .single();
@@ -79,7 +76,7 @@ export function useLiveStreams() {
       
       return data;
     } catch (error) {
-      console.error("Error creating stream:", error);
+      console.error("Error creating live stream:", error);
       toast({
         title: "Error",
         description: "Failed to create live stream",
@@ -88,27 +85,56 @@ export function useLiveStreams() {
     }
   };
 
-  const updateStream = async (streamId: string, updates: Partial<LiveStream>) => {
+  const updateStream = async (id: string, streamData: Partial<LiveStream>) => {
     try {
       const { data, error } = await supabase
-        .from("live_streams")
-        .update(updates)
-        .eq("id", streamId)
+        .from('live_streams')
+        .update(streamData)
+        .eq('id', id)
         .select()
         .single();
 
       if (error) throw error;
       
       setStreams(prev => prev.map(stream => 
-        stream.id === streamId ? data : stream
+        stream.id === id ? data : stream
       ));
+      
+      toast({
+        title: "Success",
+        description: "Live stream updated successfully",
+      });
       
       return data;
     } catch (error) {
-      console.error("Error updating stream:", error);
+      console.error("Error updating live stream:", error);
       toast({
         title: "Error",
         description: "Failed to update live stream",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteStream = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('live_streams')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      setStreams(prev => prev.filter(stream => stream.id !== id));
+      toast({
+        title: "Success",
+        description: "Live stream deleted successfully",
+      });
+    } catch (error) {
+      console.error("Error deleting live stream:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete live stream",
         variant: "destructive",
       });
     }
@@ -119,6 +145,7 @@ export function useLiveStreams() {
     loading,
     createStream,
     updateStream,
-    fetchStreams,
+    deleteStream,
+    fetchLiveStreams,
   };
 }
