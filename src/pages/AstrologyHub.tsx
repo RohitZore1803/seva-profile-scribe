@@ -4,15 +4,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Star, Moon, Sun, Calendar, BookOpen, Sparkles } from "lucide-react";
+import { Star, Moon, Sun, Calendar, BookOpen, Sparkles, Heart, Users, TrendingUp } from "lucide-react";
 import { useAstrology } from "@/hooks/useAstrology";
 import AstrologyProfileForm from "@/components/AstrologyProfileForm";
 import AstrologyReports from "@/components/AstrologyReports";
+import BirthChartGenerator from "@/components/astrology/BirthChartGenerator";
+import PersonalizedTransits from "@/components/astrology/PersonalizedTransits";
+import CompatibilityTool from "@/components/astrology/CompatibilityTool";
+import AstrologyEventCalendar from "@/components/astrology/AstrologyEventCalendar";
+import PaymentModal from "@/components/PaymentModal";
 import { toast } from "@/hooks/use-toast";
 
 export default function AstrologyHub() {
   const { profile, consultations, loading, createOrUpdateProfile, bookConsultation } = useAstrology();
   const [activeTab, setActiveTab] = useState("profile");
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedService, setSelectedService] = useState<any>(null);
 
   const handleBookConsultation = async (consultationType: string, price: number) => {
     if (!profile) {
@@ -24,12 +31,21 @@ export default function AstrologyHub() {
       return;
     }
 
-    await bookConsultation({
-      consultation_type: consultationType,
-      price: price,
-      duration_minutes: 30,
-      status: 'pending',
-    });
+    setSelectedService({ title: consultationType, price });
+    setShowPaymentModal(true);
+  };
+
+  const handlePaymentSuccess = async () => {
+    if (selectedService) {
+      await bookConsultation({
+        consultation_type: selectedService.title,
+        price: selectedService.price,
+        duration_minutes: 30,
+        status: 'pending',
+      });
+      setShowPaymentModal(false);
+      setSelectedService(null);
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -47,46 +63,46 @@ export default function AstrologyHub() {
 
   const suggestedServices = [
     {
-      title: "Ganesha Pooja",
-      description: "Remove obstacles and bring prosperity to your life",
-      benefit: "Clears path for success and new beginnings",
-      price: 1500,
-      duration: "2 hours"
-    },
-    {
-      title: "Lakshmi Pooja",
-      description: "Attract wealth and abundance",
-      benefit: "Improves financial situation and brings prosperity",
-      price: 2000,
-      duration: "3 hours"
-    },
-    {
-      title: "Navagraha Pooja",
-      description: "Balance planetary influences in your life",
-      benefit: "Reduces malefic effects and strengthens positive energies",
+      title: "Personal Birth Chart Reading",
+      description: "Comprehensive analysis of your natal chart",
+      benefit: "Understand your core personality and life path",
       price: 2500,
-      duration: "4 hours"
+      duration: "60 minutes"
     },
     {
-      title: "Saraswati Pooja",
-      description: "Enhance knowledge and wisdom",
-      benefit: "Improves learning abilities and career growth",
-      price: 1200,
+      title: "Relationship Compatibility",
+      description: "Synastry analysis for couples",
+      benefit: "Discover relationship dynamics and potential",
+      price: 3500,
+      duration: "90 minutes"
+    },
+    {
+      title: "Career Guidance Reading",
+      description: "Astrological insights for professional growth",
+      benefit: "Identify ideal career paths and timing",
+      price: 2000,
+      duration: "45 minutes"
+    },
+    {
+      title: "Transit Forecast",
+      description: "Upcoming planetary influences",
+      benefit: "Prepare for future opportunities and challenges",
+      price: 1800,
+      duration: "30 minutes"
+    },
+    {
+      title: "Lunar Cycle Guidance",
+      description: "Work with moon phases for manifestation",
+      benefit: "Optimize timing for goals and decisions",
+      price: 1500,
+      duration: "30 minutes"
+    },
+    {
+      title: "Vedic Astrology Consultation",
+      description: "Traditional Indian astrological insights",
+      benefit: "Karmic patterns and spiritual guidance",
+      price: 4000,
       duration: "2 hours"
-    },
-    {
-      title: "Hanuman Pooja",
-      description: "Gain strength and courage",
-      benefit: "Provides protection and removes fear",
-      price: 1000,
-      duration: "1.5 hours"
-    },
-    {
-      title: "Mahamrityunjaya Jaap",
-      description: "For health and longevity",
-      benefit: "Promotes healing and protects from illness",
-      price: 3000,
-      duration: "5 hours"
     }
   ];
 
@@ -96,14 +112,17 @@ export default function AstrologyHub() {
         <div className="max-w-6xl mx-auto">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-orange-800 mb-2">Astrology Hub</h1>
-            <p className="text-orange-600">Discover your cosmic insights and spiritual guidance</p>
+            <p className="text-orange-600">Discover your cosmic insights and spiritual guidance through interactive astrology</p>
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-7">
               <TabsTrigger value="profile">Profile</TabsTrigger>
+              <TabsTrigger value="chart">Birth Chart</TabsTrigger>
+              <TabsTrigger value="transits">Live Transits</TabsTrigger>
+              <TabsTrigger value="compatibility">Compatibility</TabsTrigger>
+              <TabsTrigger value="calendar">Calendar</TabsTrigger>
               <TabsTrigger value="consultations">Consultations</TabsTrigger>
-              <TabsTrigger value="reports">Reports</TabsTrigger>
               <TabsTrigger value="services">Services</TabsTrigger>
             </TabsList>
 
@@ -147,6 +166,82 @@ export default function AstrologyHub() {
                           <p className="text-purple-600">{profile.rising_sign}</p>
                         </div>
                       )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+
+            <TabsContent value="chart">
+              {profile ? (
+                <BirthChartGenerator profile={profile} />
+              ) : (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Birth Chart Generator</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-8">
+                      <Star className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                      <h3 className="text-lg font-semibold mb-2">Complete Your Profile First</h3>
+                      <p className="text-gray-600">Fill out your astrology profile to generate your birth chart</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+
+            <TabsContent value="transits">
+              {profile ? (
+                <PersonalizedTransits profile={profile} />
+              ) : (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Live Transits & Forecasts</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-8">
+                      <TrendingUp className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                      <h3 className="text-lg font-semibold mb-2">Complete Your Profile First</h3>
+                      <p className="text-gray-600">Fill out your astrology profile to get personalized transit readings</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+
+            <TabsContent value="compatibility">
+              {profile ? (
+                <CompatibilityTool profile={profile} />
+              ) : (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Compatibility Analysis</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-8">
+                      <Heart className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                      <h3 className="text-lg font-semibold mb-2">Complete Your Profile First</h3>
+                      <p className="text-gray-600">Fill out your astrology profile to analyze compatibility</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+
+            <TabsContent value="calendar">
+              {profile ? (
+                <AstrologyEventCalendar profile={profile} />
+              ) : (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Astrological Calendar</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-8">
+                      <Calendar className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                      <h3 className="text-lg font-semibold mb-2">Complete Your Profile First</h3>
+                      <p className="text-gray-600">Fill out your astrology profile to see personalized events</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -199,34 +294,15 @@ export default function AstrologyHub() {
               </div>
             </TabsContent>
 
-            <TabsContent value="reports">
-              {profile ? (
-                <AstrologyReports profile={profile} />
-              ) : (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Astrology Reports</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-center py-8">
-                      <BookOpen className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                      <h3 className="text-lg font-semibold mb-2">Complete Your Profile First</h3>
-                      <p className="text-gray-600">Fill out your astrology profile to get personalized reports</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
-
             <TabsContent value="services">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Sparkles className="w-5 h-5 text-orange-600" />
-                    Recommended Services for Better Life
+                    Professional Astrology Services
                   </CardTitle>
                   <p className="text-gray-600 mt-2">
-                    Based on astrological insights, these services can help improve your life and solve various issues
+                    Connect with expert astrologers for personalized readings and guidance
                   </p>
                 </CardHeader>
                 <CardContent>
@@ -267,6 +343,16 @@ export default function AstrologyHub() {
           </Tabs>
         </div>
       </div>
+
+      {showPaymentModal && selectedService && (
+        <PaymentModal
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          amount={selectedService.price}
+          title={selectedService.title}
+          description="Professional astrology consultation"
+        />
+      )}
     </div>
   );
 }

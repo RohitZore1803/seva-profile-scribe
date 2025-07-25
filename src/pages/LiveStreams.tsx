@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,7 +14,7 @@ import { toast } from "@/hooks/use-toast";
 
 export default function LiveStreams() {
   const { profile } = useProfile();
-  const { streams, loading, createStream, updateStream, fetchStreams } = useLiveStreams();
+  const { streams, loading, createStream, updateStream, fetchLiveStreams } = useLiveStreams();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingStream, setEditingStream] = useState(null);
   const [formData, setFormData] = useState({
@@ -27,7 +26,7 @@ export default function LiveStreams() {
   });
 
   useEffect(() => {
-    fetchStreams();
+    fetchLiveStreams();
   }, []);
 
   const handleCreateStream = async (e: React.FormEvent) => {

@@ -87,13 +87,27 @@ export function useAstrology() {
   const createOrUpdateProfile = async (profileData: Partial<AstrologyProfile>) => {
     if (!user) return;
 
+    // Ensure required fields are present
+    if (!profileData.birth_date || !profileData.birth_place) {
+      toast({
+        title: "Error",
+        description: "Birth date and place are required",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
+      const dataToUpsert = {
+        ...profileData,
+        user_id: user.id,
+        birth_date: profileData.birth_date,
+        birth_place: profileData.birth_place,
+      };
+
       const { data, error } = await supabase
         .from('astrology_profiles')
-        .upsert({
-          ...profileData,
-          user_id: user.id,
-        })
+        .upsert(dataToUpsert)
         .select()
         .single();
 
@@ -119,13 +133,27 @@ export function useAstrology() {
   const bookConsultation = async (consultationData: Partial<AstrologyConsultation>) => {
     if (!user) return;
 
+    // Ensure required fields are present
+    if (!consultationData.consultation_type || !consultationData.price) {
+      toast({
+        title: "Error",
+        description: "Consultation type and price are required",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
+      const dataToInsert = {
+        ...consultationData,
+        user_id: user.id,
+        consultation_type: consultationData.consultation_type,
+        price: consultationData.price,
+      };
+
       const { data, error } = await supabase
         .from('astrology_consultations')
-        .insert({
-          ...consultationData,
-          user_id: user.id,
-        })
+        .insert(dataToInsert)
         .select()
         .single();
 

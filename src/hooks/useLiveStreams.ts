@@ -55,14 +55,27 @@ export function useLiveStreams() {
   const createStream = async (streamData: Partial<LiveStream>) => {
     if (!user) return;
 
+    // Ensure required fields are present
+    if (!streamData.title) {
+      toast({
+        title: "Error",
+        description: "Stream title is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
+      const dataToInsert = {
+        ...streamData,
+        pandit_id: user.id,
+        stream_key: `stream_${Date.now()}`,
+        title: streamData.title,
+      };
+
       const { data, error } = await supabase
         .from('live_streams')
-        .insert({
-          ...streamData,
-          pandit_id: user.id,
-          stream_key: `stream_${Date.now()}`,
-        })
+        .insert(dataToInsert)
         .select()
         .single();
 
