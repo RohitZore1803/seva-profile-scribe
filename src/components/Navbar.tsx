@@ -120,20 +120,12 @@ const Navbar = () => {
             {!user ? (
               <div className="flex flex-col gap-3">
                 <Link
-                  to="/auth?role=customer"
+                  to="/auth"
                   onClick={() => setIsOpen(false)}
-                  className="flex items-center gap-2 text-sm bg-orange-50 dark:bg-orange-900 px-4 py-3 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-800"
-                >
-                  <User size={16} />
-                  Customer Login
-                </Link>
-                <Link
-                  to="/auth?role=pandit"
-                  onClick={() => setIsOpen(false)}
-                  className="flex items-center gap-2 text-sm bg-orange-50 dark:bg-orange-900 px-4 py-3 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-800"
+                  className="flex items-center gap-2 text-sm bg-orange-50 dark:bg-orange-900 px-4 py-3 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-800 text-orange-700 dark:text-orange-300"
                 >
                   <LogIn size={16} />
-                  Pandit Login
+                  Login / Sign Up
                 </Link>
                 <Link
                   to="/admin-auth"
@@ -213,15 +205,17 @@ const Navbar = () => {
         {!isMobile && <ThemeToggle />}
         {!user && !isMobile ? (
           <>
-            <Link to="/auth?role=customer" className="flex gap-1 items-center text-sm hover:text-orange-700 dark:hover:text-orange-300 bg-orange-50 dark:bg-orange-900 px-3 py-2 rounded-md">
-              <User size={16} />
-              Customer Login
-            </Link>
-            <Link to="/auth?role=pandit" className="flex gap-1 items-center text-sm hover:text-orange-700 dark:hover:text-orange-300 bg-orange-50 dark:bg-orange-900 px-3 py-2 rounded-md">
+            <Link 
+              to="/auth" 
+              className="flex gap-1 items-center text-sm hover:text-orange-700 dark:hover:text-orange-300 bg-orange-50 dark:bg-orange-900 px-4 py-2 rounded-md font-medium"
+            >
               <LogIn size={16} />
-              Pandit Login
+              Login / Sign Up
             </Link>
-            <Link to="/admin-auth" className="flex gap-1 items-center text-sm hover:text-red-700 dark:hover:text-red-300 bg-red-50 dark:bg-red-900 px-3 py-2 rounded-md text-red-600 dark:text-red-400">
+            <Link 
+              to="/admin-auth" 
+              className="flex gap-1 items-center text-sm hover:text-red-700 dark:hover:text-red-300 bg-red-50 dark:bg-red-900 px-3 py-2 rounded-md text-red-600 dark:text-red-400"
+            >
               <LogIn size={16} />
               Admin
             </Link>

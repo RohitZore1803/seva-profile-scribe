@@ -3,12 +3,13 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, MapPin, User, Edit, Phone, Mail, Star, Gift } from "lucide-react";
+import { Calendar, Clock, MapPin, User, Edit, Phone, Mail, Star, Gift, CreditCard } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
 import { useLoyaltyProgram } from "@/hooks/useLoyaltyProgram";
 import EditCustomerProfileModal from "@/components/EditCustomerProfileModal";
 import CustomerDashboardHeader from "@/components/CustomerDashboardHeader";
+import PaymentModal from "@/components/PaymentModal";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -22,6 +23,11 @@ interface Booking {
   address: string;
   phone: string;
   created_at: string;
+  tentative_date: string;
+  preferred_time: string;
+  service_name: string;
+  total_amount: number;
+  payment_status: string;
   services: {
     name: string;
     price: number;
@@ -34,6 +40,8 @@ export default function DashboardCustomer() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -83,15 +91,34 @@ export default function DashboardCustomer() {
     }
   };
 
+  const handlePayNow = (booking: Booking) => {
+    setSelectedBooking(booking);
+    setPaymentModalOpen(true);
+  };
+
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
       case "pending":
         return "bg-yellow-100 text-yellow-800";
       case "confirmed":
+      case "booked":
         return "bg-blue-100 text-blue-800";
       case "completed":
         return "bg-green-100 text-green-800";
       case "cancelled":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const getPaymentStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "paid":
+        return "bg-green-100 text-green-800";
+      case "pending":
+        return "bg-yellow-100 text-yellow-800";
+      case "failed":
         return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
@@ -257,24 +284,29 @@ export default function DashboardCustomer() {
                             <div className="flex justify-between items-start mb-3">
                               <div>
                                 <h4 className="font-semibold text-lg text-orange-800">
-                                  {booking.services?.name}
+                                  {booking.service_name || booking.services?.name}
                                 </h4>
                                 <div className="flex items-center gap-4 mt-2 text-sm text-orange-600">
                                   <div className="flex items-center gap-1">
                                     <Calendar className="w-4 h-4" />
-                                    <span>{new Date(booking.fromdate).toLocaleDateString()}</span>
+                                    <span>{booking.tentative_date ? new Date(booking.tentative_date).toLocaleDateString() : new Date(booking.fromdate).toLocaleDateString()}</span>
                                   </div>
-                                  <div className="flex items-center gap-1">
-                                    <Clock className="w-4 h-4" />
-                                    <span>
-                                      {new Date(booking.fromdate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                                    </span>
-                                  </div>
+                                  {booking.preferred_time && (
+                                    <div className="flex items-center gap-1">
+                                      <Clock className="w-4 h-4" />
+                                      <span>{booking.preferred_time}</span>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
-                              <Badge className={getStatusColor(booking.status)}>
-                                {booking.status?.toUpperCase()}
-                              </Badge>
+                              <div className="flex flex-col items-end gap-2">
+                                <Badge className={getStatusColor(booking.status)}>
+                                  {booking.status?.toUpperCase()}
+                                </Badge>
+                                <Badge className={getPaymentStatusColor(booking.payment_status)}>
+                                  {booking.payment_status?.toUpperCase()}
+                                </Badge>
+                              </div>
                             </div>
                             
                             <div className="space-y-2 text-sm text-orange-600">
@@ -296,6 +328,19 @@ export default function DashboardCustomer() {
                                 </div>
                               )}
                             </div>
+
+                            {/* Pay Now Button for Booked Status */}
+                            {(booking.status === 'booked' || booking.status === 'confirmed') && booking.payment_status === 'pending' && (
+                              <div className="mt-4 pt-4 border-t border-orange-200">
+                                <Button
+                                  onClick={() => handlePayNow(booking)}
+                                  className="w-full bg-green-600 hover:bg-green-700 text-white"
+                                >
+                                  <CreditCard className="w-4 h-4 mr-2" />
+                                  Pay Now - {formatPrice(booking.services?.price || booking.total_amount || 0)}
+                                </Button>
+                              </div>
+                            )}
                           </CardContent>
                         </Card>
                       ))}
@@ -315,6 +360,19 @@ export default function DashboardCustomer() {
         profile={profile}
         onProfileUpdated={handleProfileUpdate}
       />
+
+      {/* Payment Modal */}
+      {selectedBooking && (
+        <PaymentModal
+          open={paymentModalOpen}
+          onClose={() => {
+            setPaymentModalOpen(false);
+            setSelectedBooking(null);
+            fetchBookings(); // Refresh bookings after payment
+          }}
+          booking={selectedBooking}
+        />
+      )}
     </div>
   );
 }

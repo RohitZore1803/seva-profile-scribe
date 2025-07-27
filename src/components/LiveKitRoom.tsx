@@ -50,15 +50,9 @@ export default function CustomLiveKitRoom({
     room.on('connectionStateChanged', (state) => {
       if (state === 'disconnected') {
         console.warn('LiveKit room disconnected');
+        setIsConnected(false);
       }
     });
-    room.on('connectionStateChanged', (state) => {
-  if (state === 'disconnected') {
-    console.warn('LiveKit room disconnected');
-  }
-  
-});
-
 
     updateViewerCount();
 
@@ -118,7 +112,7 @@ export default function CustomLiveKitRoom({
 
           <div className="flex-1 bg-black relative">
             {isPublisher ? (
-              <PublisherView room={room} />
+              <PublisherView />
             ) : (
               <ViewerInterface />
             )}
@@ -131,7 +125,7 @@ export default function CustomLiveKitRoom({
   );
 }
 
-function PublisherView({ room }: { room: Room | null }) {
+function PublisherView() {
   const participants = useParticipants();
   const tracks = useTracks(
     [
@@ -142,28 +136,10 @@ function PublisherView({ room }: { room: Room | null }) {
   );
 
   return (
-    <div className="w-full h-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 p-4">
-      {room?.localParticipant && (
-        <ParticipantTile
-          key={room.localParticipant.sid}
-          participant={room.localParticipant}
-          style={{ height: '100%', width: '100%' }}
-          displayName
-        />
-      )}
-
-      {participants.map((participant) => (
-        <ParticipantTile
-          key={participant.sid}
-          participant={participant}
-          style={{ height: '100%', width: '100%' }}
-          displayName
-        />
-      ))}
-
-      {tracks.map((track) => (
-        <ParticipantTile key={track.trackSid} track={track} style={{ height: '100%', width: '100%' }} />
-      ))}
+    <div className="w-full h-full">
+      <GridLayout tracks={tracks} style={{ height: '100%' }}>
+        <ParticipantTile />
+      </GridLayout>
     </div>
   );
 }
