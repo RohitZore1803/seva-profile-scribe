@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,17 +14,17 @@ export default function Loyalty() {
   const { loyaltyProgram, transactions, loading } = useLoyaltyProgram();
   const { plans } = useSubscriptions();
   const [paymentModal, setPaymentModal] = useState<{
-    isOpen: boolean;
+    open: boolean;
     planId: string;
     amount: number;
     title: string;
-  }>({ isOpen: false, planId: '', amount: 0, title: '' });
+  }>({ open: false, planId: '', amount: 0, title: '' });
 
   const handleSubscribe = async (planId: string) => {
     const plan = plans.find(p => p.id === planId);
     if (plan) {
       setPaymentModal({
-        isOpen: true,
+        open: true,
         planId: planId,
         amount: plan.price_monthly,
         title: `${plan.name} Subscription`,
@@ -34,7 +33,7 @@ export default function Loyalty() {
   };
 
   const handlePaymentComplete = () => {
-    setPaymentModal({ isOpen: false, planId: '', amount: 0, title: '' });
+    setPaymentModal({ open: false, planId: '', amount: 0, title: '' });
     toast({
       title: "Subscription Activated",
       description: "Your subscription has been successfully activated!",
@@ -200,8 +199,8 @@ export default function Loyalty() {
           </div>
 
           <PaymentModal
-            isOpen={paymentModal.isOpen}
-            onClose={() => setPaymentModal({ isOpen: false, planId: '', amount: 0, title: '' })}
+            open={paymentModal.open}
+            onClose={() => setPaymentModal({ open: false, planId: '', amount: 0, title: '' })}
             amount={paymentModal.amount}
             title={paymentModal.title}
             description="Monthly subscription plan"

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -63,7 +62,15 @@ export default function DashboardCustomer() {
 
       if (error) throw error;
       console.log("Fetched bookings:", bookingsData);
-      setBookings(bookingsData || []);
+      
+      // Transform the data to match the Booking interface
+      const transformedBookings: Booking[] = (bookingsData || []).map((booking: any) => ({
+        ...booking,
+        tentative_date: booking.fromdate, // Use fromdate as tentative_date
+        service_name: booking.services?.name || 'Unknown Service', // Use service name or fallback
+      }));
+      
+      setBookings(transformedBookings);
     } catch (error) {
       console.error("Error fetching bookings:", error);
     } finally {

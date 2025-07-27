@@ -35,9 +35,9 @@ export default function CustomLiveKitRoom({
   const [room, setRoom] = useState<Room | null>(null);
   const [viewerCount, setViewerCount] = useState(0);
 
-  const handleConnected = (connectedRoom: Room) => {
+  const handleConnected = () => {
     setIsConnected(true);
-    setRoom(connectedRoom);
+    // We'll get the room instance from the component's internal state
   };
 
   useEffect(() => {
