@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import {
   LiveKitRoom as LiveKitRoomComponent,
@@ -12,9 +11,8 @@ import {
 import '@livekit/components-styles';
 import { Track } from 'livekit-client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Users, Mic, MicOff, Video, VideoOff } from 'lucide-react';
+import { Users } from 'lucide-react';
 
 interface LiveKitRoomProps {
   token: string;
@@ -24,7 +22,7 @@ interface LiveKitRoomProps {
   isPublisher?: boolean;
 }
 
-export default function LiveKitRoom({ 
+export default function CustomLiveKitRoom({ 
   token, 
   serverUrl, 
   roomName, 
@@ -81,7 +79,7 @@ export default function LiveKitRoom({
             )}
           </div>
 
-          {/* Controls */}
+          {/* Controls for Publisher */}
           {isPublisher && (
             <div className="bg-gray-900 p-4">
               <ControlBar 
@@ -98,7 +96,6 @@ export default function LiveKitRoom({
             </div>
           )}
         </div>
-        
         <RoomAudioRenderer />
       </LiveKitRoomComponent>
     </div>
