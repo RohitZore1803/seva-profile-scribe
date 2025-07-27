@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,7 +18,7 @@ export default function AstrologyHub() {
   const { profile, consultations, loading, createOrUpdateProfile, bookConsultation } = useAstrology();
   const [activeTab, setActiveTab] = useState("profile");
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [selectedService, setSelectedService] = useState<any>(null);
+  const [selectedBooking, setSelectedBooking] = useState<any>(null);
 
   const handleBookConsultation = async (consultationType: string, price: number) => {
     if (!profile) {
@@ -31,20 +30,35 @@ export default function AstrologyHub() {
       return;
     }
 
-    setSelectedService({ title: consultationType, price });
+    // Create a booking object that matches the PaymentModal interface
+    const bookingData = {
+      id: `temp-${Date.now()}`,
+      service_name: consultationType,
+      tentative_date: new Date().toISOString(),
+      preferred_time: "Not specified",
+      location: "Online",
+      address: "Virtual consultation",
+      total_amount: price * 100, // Convert to paisa
+      services: {
+        name: consultationType,
+        price: price * 100
+      }
+    };
+
+    setSelectedBooking(bookingData);
     setShowPaymentModal(true);
   };
 
   const handlePaymentSuccess = async () => {
-    if (selectedService) {
+    if (selectedBooking) {
       await bookConsultation({
-        consultation_type: selectedService.title,
-        price: selectedService.price,
+        consultation_type: selectedBooking.service_name,
+        price: selectedBooking.total_amount / 100,
         duration_minutes: 30,
         status: 'pending',
       });
       setShowPaymentModal(false);
-      setSelectedService(null);
+      setSelectedBooking(null);
     }
   };
 
@@ -344,13 +358,11 @@ export default function AstrologyHub() {
         </div>
       </div>
 
-      {showPaymentModal && selectedService && (
+      {showPaymentModal && selectedBooking && (
         <PaymentModal
-          isOpen={showPaymentModal}
+          open={showPaymentModal}
           onClose={() => setShowPaymentModal(false)}
-          amount={selectedService.price}
-          title={selectedService.title}
-          description="Professional astrology consultation"
+          booking={selectedBooking}
         />
       )}
     </div>

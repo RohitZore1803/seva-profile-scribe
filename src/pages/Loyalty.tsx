@@ -15,25 +15,36 @@ export default function Loyalty() {
   const { plans } = useSubscriptions();
   const [paymentModal, setPaymentModal] = useState<{
     open: boolean;
-    planId: string;
-    amount: number;
-    title: string;
-  }>({ open: false, planId: '', amount: 0, title: '' });
+    booking: any;
+  }>({ open: false, booking: null });
 
   const handleSubscribe = async (planId: string) => {
     const plan = plans.find(p => p.id === planId);
     if (plan) {
+      // Create a booking object that matches the PaymentModal interface
+      const bookingData = {
+        id: `subscription-${planId}`,
+        service_name: `${plan.name} Subscription`,
+        tentative_date: new Date().toISOString(),
+        preferred_time: "Immediate",
+        location: "Online",
+        address: "Digital subscription",
+        total_amount: plan.price_monthly * 100, // Convert to paisa
+        services: {
+          name: `${plan.name} Subscription`,
+          price: plan.price_monthly * 100
+        }
+      };
+
       setPaymentModal({
         open: true,
-        planId: planId,
-        amount: plan.price_monthly,
-        title: `${plan.name} Subscription`,
+        booking: bookingData,
       });
     }
   };
 
   const handlePaymentComplete = () => {
-    setPaymentModal({ open: false, planId: '', amount: 0, title: '' });
+    setPaymentModal({ open: false, booking: null });
     toast({
       title: "Subscription Activated",
       description: "Your subscription has been successfully activated!",
@@ -200,10 +211,8 @@ export default function Loyalty() {
 
           <PaymentModal
             open={paymentModal.open}
-            onClose={() => setPaymentModal({ open: false, planId: '', amount: 0, title: '' })}
-            amount={paymentModal.amount}
-            title={paymentModal.title}
-            description="Monthly subscription plan"
+            onClose={() => setPaymentModal({ open: false, booking: null })}
+            booking={paymentModal.booking}
           />
         </div>
       </div>
