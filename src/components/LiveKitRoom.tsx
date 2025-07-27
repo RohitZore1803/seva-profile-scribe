@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import {
   LiveKitRoom as LiveKitRoomComponent,
@@ -7,8 +8,8 @@ import {
   RoomAudioRenderer,
   ControlBar,
   useTracks,
-} from '@livekit/components-react';
-import '@livekit/components-react/dist/index.css';
+} from '@livekit/react-components';
+import '@livekit/react-components/dist/index.css';
 import { Track } from 'livekit-client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -43,7 +44,6 @@ export default function CustomLiveKitRoom({
         style={{ height: '100vh' }}
         onConnected={() => setIsConnected(true)}
         onDisconnected={onDisconnect}
-        onParticipantCountChanged={setViewerCount}
       >
         <div className="flex flex-col h-full">
           {/* Header */}
