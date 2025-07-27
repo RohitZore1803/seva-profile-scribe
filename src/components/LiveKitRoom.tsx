@@ -8,7 +8,7 @@ import {
   ControlBar,
   useTracks,
 } from '@livekit/components-react';
-import '@livekit/components-styles';
+import '@livekit/components-react/dist/index.css';
 import { Track } from 'livekit-client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
