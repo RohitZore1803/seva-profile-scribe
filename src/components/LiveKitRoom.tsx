@@ -52,9 +52,13 @@ export default function CustomLiveKitRoom({
         console.warn('LiveKit room disconnected');
       }
     });
-    room.on('connectionError', (error) => {
-      console.error('LiveKit connection error:', error);
-    });
+    room.on('connectionStateChanged', (state) => {
+  if (state === 'disconnected') {
+    console.warn('LiveKit room disconnected');
+  }
+  
+});
+
 
     updateViewerCount();
 
