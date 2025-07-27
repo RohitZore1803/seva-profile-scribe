@@ -8,8 +8,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
 import { useLoyaltyProgram } from "@/hooks/useLoyaltyProgram";
 import EditCustomerProfileModal from "@/components/EditCustomerProfileModal";
+import CustomerDashboardHeader from "@/components/CustomerDashboardHeader";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 interface Booking {
   id: string;
@@ -33,6 +34,7 @@ export default function DashboardCustomer() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchBookings();
@@ -69,6 +71,16 @@ export default function DashboardCustomer() {
       }
     }
     setEditModalOpen(false);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      navigate("/", { replace: true });
+    } catch (error) {
+      console.error('Logout error:', error);
+      navigate("/", { replace: true });
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -118,11 +130,13 @@ export default function DashboardCustomer() {
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-orange-800 mb-2">Customer Dashboard</h1>
-            <p className="text-orange-600">Welcome back! Manage your bookings and profile here.</p>
-          </div>
+          <CustomerDashboardHeader
+            title="Customer Dashboard"
+            subtitle="Welcome back! Manage your bookings and profile here."
+            profile={profile}
+            onEditProfile={() => setEditModalOpen(true)}
+            onLogout={handleLogout}
+          />
 
           <div className="grid lg:grid-cols-3 gap-8">
             {/* Profile Section */}
