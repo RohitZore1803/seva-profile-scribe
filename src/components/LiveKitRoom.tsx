@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import {
   LiveKitRoom as LiveKitRoomComponent,
@@ -42,7 +43,7 @@ export default function CustomLiveKitRoom({
   useEffect(() => {
     if (!room) return;
 
-    const updateViewerCount = () => setViewerCount(room.participants.size + 1);
+    const updateViewerCount = () => setViewerCount(room.numParticipants);
 
     room.on('participantConnected', updateViewerCount);
     room.on('participantDisconnected', updateViewerCount);
@@ -60,7 +61,6 @@ export default function CustomLiveKitRoom({
     return () => {
       room.off('participantConnected', updateViewerCount);
       room.off('participantDisconnected', updateViewerCount);
-      // Optionally remove other listeners here if necessary
     };
   }, [room]);
 
