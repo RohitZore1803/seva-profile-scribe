@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import {
-  LiveKitRoom,
+  LiveKitRoom as LiveKitRoomComponent,
   VideoConference,
   GridLayout,
   ParticipantTile,
@@ -36,7 +36,7 @@ export default function LiveKitRoom({
 
   return (
     <div className="w-full h-full">
-      <LiveKitRoom
+      <LiveKitRoomComponent
         video={isPublisher}
         audio={isPublisher}
         token={token}
@@ -100,7 +100,7 @@ export default function LiveKitRoom({
         </div>
         
         <RoomAudioRenderer />
-      </LiveKitRoom>
+      </LiveKitRoomComponent>
     </div>
   );
 }
