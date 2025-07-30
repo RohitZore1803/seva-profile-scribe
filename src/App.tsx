@@ -7,6 +7,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import Navbar from "@/components/Navbar";
 import Index from "./pages/Index";
+import './index.css';
+
 import NotFound from "./pages/NotFound";
 import AuthPage from "./pages/Auth";
 import AdminAuth from "./pages/AdminAuth";
