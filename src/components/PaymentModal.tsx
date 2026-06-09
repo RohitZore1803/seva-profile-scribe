@@ -62,8 +62,7 @@ export default function PaymentModal({ open, onClose, booking }: PaymentModalPro
         .update({
           payment_status: "pending_verification",
           payment_method: "upi",
-          payment_reference: referenceNumber.trim(),
-          status: "confirmed"
+          payment_reference: referenceNumber.trim()
         })
         .eq("id", booking.id);
 
