@@ -1,8 +1,7 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Play, Users, Calendar, Clock } from "lucide-react";
 import { LiveStream } from "@/hooks/useLiveStreams";
 
@@ -17,29 +16,27 @@ export default function LiveStreamCard({ stream, onJoin }: LiveStreamCardProps) 
       case "live":
         return "bg-red-500 text-white";
       case "scheduled":
-        return "bg-blue-500 text-white";
-      case "ended":
-        return "bg-gray-500 text-white";
+        return "bg-amber-500 text-white";
       default:
         return "bg-gray-500 text-white";
     }
   };
 
-  const formatPrice = (price: number) => {
-    return price > 0 ? `₹${price}` : "Free";
+  const formatPrice = (price?: number) => {
+    return price && price > 0 ? `INR ${price}` : "Free";
   };
 
   return (
-    <Card className="hover:shadow-lg transition-shadow">
+    <Card className="border-orange-200 bg-white/90 hover:shadow-md transition-shadow">
       <CardHeader className="pb-4">
-        <div className="flex items-start justify-between">
+        <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
             <Avatar>
-              <AvatarFallback>P</AvatarFallback>
+              <AvatarFallback className="bg-orange-100 text-orange-800">P</AvatarFallback>
             </Avatar>
             <div>
-              <CardTitle className="text-lg">{stream.title}</CardTitle>
-              <p className="text-sm text-gray-600">{stream.description}</p>
+              <CardTitle className="text-lg text-orange-900">{stream.title}</CardTitle>
+              <p className="text-sm text-orange-700">{stream.description}</p>
             </div>
           </div>
           <Badge className={getStatusColor(stream.status)}>
@@ -47,43 +44,38 @@ export default function LiveStreamCard({ stream, onJoin }: LiveStreamCardProps) 
           </Badge>
         </div>
       </CardHeader>
-      
+
       <CardContent className="space-y-4">
-        <div className="flex items-center gap-4 text-sm text-gray-600">
+        <div className="flex flex-wrap items-center gap-4 text-sm text-orange-600">
           <div className="flex items-center gap-1">
             <Users className="w-4 h-4" />
-            <span>{stream.viewer_count}</span>
+            <span>{stream.viewer_count || 0}</span>
           </div>
-          
+
           {stream.scheduled_at && (
-            <div className="flex items-center gap-1">
-              <Calendar className="w-4 h-4" />
-              <span>{new Date(stream.scheduled_at).toLocaleDateString()}</span>
-            </div>
-          )}
-          
-          {stream.scheduled_at && (
-            <div className="flex items-center gap-1">
-              <Clock className="w-4 h-4" />
-              <span>{new Date(stream.scheduled_at).toLocaleTimeString()}</span>
-            </div>
+            <>
+              <div className="flex items-center gap-1">
+                <Calendar className="w-4 h-4" />
+                <span>{new Date(stream.scheduled_at).toLocaleDateString()}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Clock className="w-4 h-4" />
+                <span>{new Date(stream.scheduled_at).toLocaleTimeString()}</span>
+              </div>
+            </>
           )}
         </div>
 
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            {stream.is_premium && (
-              <Badge variant="secondary">Premium</Badge>
-            )}
-            <span className="font-semibold text-orange-600">
-              {formatPrice(stream.price)}
-            </span>
+            {stream.is_premium && <Badge variant="secondary">Premium</Badge>}
+            <span className="font-semibold text-orange-700">{formatPrice(stream.price)}</span>
           </div>
-          
-          <Button 
+
+          <Button
             onClick={() => onJoin?.(stream.id)}
             disabled={stream.status === "ended"}
-            className="bg-orange-600 hover:bg-orange-700"
+            className="bg-orange-600 hover:bg-orange-700 text-white"
           >
             <Play className="w-4 h-4 mr-2" />
             {stream.status === "live" ? "Join Live" : "Watch"}

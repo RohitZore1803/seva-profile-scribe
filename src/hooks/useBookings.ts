@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import type { TablesUpdate } from "@/integrations/supabase/types";
 import { useSession } from "./useSession";
 import { toast } from "@/hooks/use-toast";
 
@@ -160,9 +161,15 @@ export function useBookings() {
     if (!user) return { error: "Not authenticated" };
 
     try {
+      const {
+        services,
+        profiles,
+        ...bookingUpdates
+      } = updates;
+
       const { data, error } = await supabase
         .from("bookings")
-        .update(updates)
+        .update(bookingUpdates as TablesUpdate<"bookings">)
         .eq("id", id)
         .eq("created_by", user.id)
         .select()

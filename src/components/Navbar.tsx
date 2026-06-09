@@ -9,11 +9,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   NavigationMenu,
-  NavigationMenuContent,
   NavigationMenuItem,
   NavigationMenuLink,
   NavigationMenuList,
-  NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
 import {
   Sheet,
@@ -69,8 +67,6 @@ const Navbar = () => {
     { name: "Home", href: "/" },
     { name: "Services", href: "/services" },
     { name: "Live Streams", href: "/live-streams" },
-    { name: "Astrology", href: "/astrology" },
-    { name: "Loyalty", href: "/loyalty" },
     { name: "About Us", href: "/about" },
     { name: "Contact", href: "/contact" },
   ];
@@ -191,7 +187,7 @@ const Navbar = () => {
   );
 
   return (
-    <nav className="w-full bg-white dark:bg-gray-950 shadow border-b dark:border-gray-800 px-4 py-3 flex items-center justify-between sticky top-0 z-30">
+    <nav className="w-full bg-white/95 dark:bg-gray-950/95 backdrop-blur border-b border-orange-100 dark:border-gray-800 px-4 py-3 flex items-center justify-between sticky top-0 z-30">
       <div className="flex items-center gap-4">
         <Link to="/" className="flex items-center gap-2">
           <span className="text-2xl font-bold text-orange-600 dark:text-orange-400 font-playfair tracking-wide">

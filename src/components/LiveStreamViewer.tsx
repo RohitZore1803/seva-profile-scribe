@@ -1,9 +1,7 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Users, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import LiveKitRoom from './LiveKitRoom';
@@ -19,13 +17,7 @@ export default function LiveStreamViewer({ streamId, isOpen, onClose }: LiveStre
   const [roomData, setRoomData] = useState<any>(null);
   const [stream, setStream] = useState<any>(null);
 
-  useEffect(() => {
-    if (isOpen && streamId) {
-      joinStream();
-    }
-  }, [isOpen, streamId]);
-
-  const joinStream = async () => {
+  const joinStream = useCallback(async () => {
     setLoading(true);
     try {
       // Get stream details
@@ -63,7 +55,13 @@ export default function LiveStreamViewer({ streamId, isOpen, onClose }: LiveStre
     } finally {
       setLoading(false);
     }
-  };
+  }, [streamId, onClose]);
+
+  useEffect(() => {
+    if (isOpen && streamId) {
+      joinStream();
+    }
+  }, [isOpen, streamId, joinStream]);
 
   const handleDisconnect = () => {
     setRoomData(null);
@@ -77,8 +75,8 @@ export default function LiveStreamViewer({ streamId, isOpen, onClose }: LiveStre
         <DialogContent className="max-w-6xl h-[80vh]">
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-blue-800">Joining stream...</p>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4" />
+              <p className="text-orange-800">Joining stream...</p>
             </div>
           </div>
         </DialogContent>
@@ -100,8 +98,8 @@ export default function LiveStreamViewer({ streamId, isOpen, onClose }: LiveStre
         ) : (
           <div className="flex items-center justify-center h-96">
             <div className="text-center">
-              <p className="text-lg">Unable to connect to stream</p>
-              <Button onClick={onClose} className="mt-4">
+              <p className="text-lg text-orange-900">Unable to connect to stream</p>
+              <Button onClick={onClose} className="mt-4 bg-orange-600 hover:bg-orange-700">
                 Close
               </Button>
             </div>

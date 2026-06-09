@@ -1,10 +1,6 @@
 import React from "react";
 import Footer from "@/components/Footer";
 import AboutFeature from "@/components/AboutFeature";
-import pujaHero from "profile/illustrations/puja-hero.png";
-
-
-
 
 const features: string[] = [
   "Convenience to clients and streamlined processing at the click of a button.",
@@ -34,14 +30,12 @@ const About: React.FC = () => (
         </div>
         <div className="flex-1 flex justify-center">
           <img
-            src="SEVA-PROFILE-SCRIBE/public/illustrations/puja-hero.png"
-            alt="E-GURUJI Illustration"
+            src="/illustrations/puja-hero.png"
+            alt="E-GURUJI puja service"
             width={300}
             height={240}
             className="rounded-xl shadow-md border border-orange-100"
           />
-
-
         </div>
       </div>
     </section>

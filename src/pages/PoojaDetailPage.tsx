@@ -216,13 +216,13 @@ export default function PoojaDetailPage() {
               <Card className="shadow-lg">
                 <CardContent className="p-6">
                   <h3 className="font-bold text-lg mb-4 text-gray-900 flex items-center gap-2">
-                    <Clock className="h-5 w-5 text-blue-500" />
+                    <Clock className="h-5 w-5 text-orange-500" />
                     Requirements
                   </h3>
                   <ul className="space-y-3">
                     {requirements.map((requirement, index) => (
                       <li key={index} className="flex items-start gap-3 text-sm text-gray-600">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                        <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
                         <span>{requirement}</span>
                       </li>
                     ))}
@@ -291,7 +291,7 @@ export default function PoojaDetailPage() {
                       <span>Verified Pandits</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                      <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
                       <span>Secure Payment</span>
                     </div>
                   </div>

@@ -55,14 +55,14 @@ export default function EditPanditProfileModal({
       if (form.profile_image_file) {
         const file = form.profile_image_file;
         const { data, error } = await supabase.storage.from("avatars").upload(
-          `avatars/${Date.now()}_${file.name}`,
+          `${Date.now()}_${file.name}`,
           file,
           { cacheControl: "3600", upsert: true }
         );
         if (error) throw error;
         profile_image_url = supabase.storage.from("avatars").getPublicUrl(data.path).data.publicUrl;
       }
-      
+
       // Update the unified profiles table
       const { error: updateError } = await supabase
         .from("profiles")

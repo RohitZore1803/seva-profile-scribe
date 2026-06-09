@@ -19,7 +19,7 @@ export default function DashboardStats({ stats, activeFilter, onFilterChange }: 
       icon: Calendar,
       value: stats.totalBookings,
       label: "Total Bookings",
-      color: "text-blue-600"
+      color: "text-orange-600"
     },
     {
       key: "pending",
@@ -40,7 +40,7 @@ export default function DashboardStats({ stats, activeFilter, onFilterChange }: 
       icon: CheckCircle,
       value: stats.completedBookings,
       label: "Completed",
-      color: "text-purple-600"
+      color: "text-green-600"
     }
   ];
 

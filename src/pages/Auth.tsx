@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,28 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/hooks/useSession";
 import { cleanupAuthState } from "@/utils/authCleanup";
-import { Eye, EyeOff, Mail, Lock, User, MapPin, Award, FileText, Phone } from "lucide-react";
+import { Chrome, Eye, EyeOff, Mail, Lock, User, MapPin, Award, FileText, Phone } from "lucide-react";
+
+type HCaptchaApi = {
+  render: (
+    container: HTMLElement,
+    options: {
+      sitekey: string;
+      callback: (token: string) => void;
+      "expired-callback": () => void;
+      "error-callback": () => void;
+    }
+  ) => string | number;
+  reset: (widgetId?: string | number) => void;
+};
+
+declare global {
+  interface Window {
+    hcaptcha?: HCaptchaApi;
+  }
+}
+
+const HCAPTCHA_SITE_KEY = import.meta.env.VITE_HCAPTCHA_SITE_KEY as string | undefined;
 
 export default function AuthPage() {
   const navigate = useNavigate();
@@ -19,6 +40,10 @@ export default function AuthPage() {
   const { user, loading } = useSession();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
+  const [captchaToken, setCaptchaToken] = useState("");
+  const captchaContainerRef = useRef<HTMLDivElement | null>(null);
+  const captchaWidgetIdRef = useRef<string | number | null>(null);
   
   const defaultRole = searchParams.get("role") || "customer";
   const [selectedRole, setSelectedRole] = useState<"customer" | "pandit">(
@@ -44,13 +69,35 @@ export default function AuthPage() {
     if (user && !loading) {
       const fetchProfile = async () => {
         try {
+          const pendingOAuthRole = localStorage.getItem("pendingOAuthRole");
           const { data } = await supabase
             .from("profiles")
             .select("user_type")
             .eq("id", user.id)
             .maybeSingle();
-            
-          if (data?.user_type === "pandit") {
+
+          const roleFromOAuth =
+            pendingOAuthRole === "customer" || pendingOAuthRole === "pandit"
+              ? pendingOAuthRole
+              : null;
+
+          let userType = data?.user_type;
+          if (roleFromOAuth && data && data.user_type !== roleFromOAuth) {
+            const { error } = await supabase
+              .from("profiles")
+              .update({ user_type: roleFromOAuth })
+              .eq("id", user.id);
+
+            if (!error) {
+              userType = roleFromOAuth;
+            }
+          }
+
+          if (roleFromOAuth) {
+            localStorage.removeItem("pendingOAuthRole");
+          }
+
+          if (userType === "pandit") {
             navigate("/dashboard-pandit");
           } else {
             navigate("/dashboard-customer");
@@ -64,6 +111,45 @@ export default function AuthPage() {
       fetchProfile();
     }
   }, [user, loading, navigate]);
+
+  useEffect(() => {
+    if (activeTab !== "signup" || !HCAPTCHA_SITE_KEY || captchaWidgetIdRef.current !== null) {
+      return;
+    }
+
+    const renderCaptcha = () => {
+      if (!window.hcaptcha || !captchaContainerRef.current || captchaWidgetIdRef.current !== null) {
+        return;
+      }
+
+      captchaWidgetIdRef.current = window.hcaptcha.render(captchaContainerRef.current, {
+        sitekey: HCAPTCHA_SITE_KEY,
+        callback: setCaptchaToken,
+        "expired-callback": () => setCaptchaToken(""),
+        "error-callback": () => setCaptchaToken(""),
+      });
+    };
+
+    if (window.hcaptcha) {
+      renderCaptcha();
+      return;
+    }
+
+    const existingScript = document.querySelector<HTMLScriptElement>('script[src^="https://js.hcaptcha.com/1/api.js"]');
+    if (existingScript) {
+      existingScript.addEventListener("load", renderCaptcha, { once: true });
+      return () => existingScript.removeEventListener("load", renderCaptcha);
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://js.hcaptcha.com/1/api.js?render=explicit";
+    script.async = true;
+    script.defer = true;
+    script.addEventListener("load", renderCaptcha, { once: true });
+    document.head.appendChild(script);
+
+    return () => script.removeEventListener("load", renderCaptcha);
+  }, [activeTab]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,6 +181,44 @@ export default function AuthPage() {
       console.error("Login error:", error);
       toast({
         title: "Login Failed",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+
+    try {
+      cleanupAuthState();
+      localStorage.setItem("pendingOAuthRole", selectedRole);
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth`,
+          queryParams: {
+            prompt: "select_account",
+          },
+        },
+      });
+
+      if (error) {
+        localStorage.removeItem("pendingOAuthRole");
+        toast({
+          title: "Google Sign In Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      localStorage.removeItem("pendingOAuthRole");
+      console.error("Google sign in error:", error);
+      toast({
+        title: "Google Sign In Failed",
         description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
@@ -142,6 +266,15 @@ export default function AuthPage() {
         return;
       }
 
+      if (HCAPTCHA_SITE_KEY && !captchaToken) {
+        toast({
+          title: "CAPTCHA Required",
+          description: "Please complete the CAPTCHA verification.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // For pandits, validate required fields
       if (selectedRole === "pandit") {
         if (!signupForm.expertise.trim()) {
@@ -183,6 +316,7 @@ export default function AuthPage() {
         options: {
           emailRedirectTo: redirectUrl,
           data: metadata,
+          captchaToken: HCAPTCHA_SITE_KEY ? captchaToken : undefined,
         },
       });
 
@@ -264,6 +398,10 @@ export default function AuthPage() {
         variant: "destructive",
       });
     } finally {
+      if (HCAPTCHA_SITE_KEY && window.hcaptcha && captchaWidgetIdRef.current !== null) {
+        window.hcaptcha.reset(captchaWidgetIdRef.current);
+        setCaptchaToken("");
+      }
       setIsLoading(false);
     }
   };
@@ -283,7 +421,7 @@ export default function AuthPage() {
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
       <Card className="w-full max-w-lg bg-white/90 dark:bg-gray-950/90 backdrop-blur-sm shadow-2xl border-0">
         <CardHeader className="text-center pb-6">
-          <div className="text-6xl mb-4">🕉️</div>
+          <div className="text-5xl mb-4 font-serif text-orange-700">Om</div>
           <CardTitle className="text-3xl font-bold text-orange-800 dark:text-orange-400">
             Welcome to E-GURUji
           </CardTitle>
@@ -293,7 +431,7 @@ export default function AuthPage() {
         </CardHeader>
         
         <CardContent>
-          <Tabs defaultValue="login" className="space-y-6">
+          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "login" | "signup")} className="space-y-6">
             <TabsList className="grid w-full grid-cols-2 bg-orange-100 dark:bg-orange-900">
               <TabsTrigger value="login" className="data-[state=active]:bg-orange-600 data-[state=active]:text-white">
                 Sign In
@@ -304,6 +442,23 @@ export default function AuthPage() {
             </TabsList>
 
             <TabsContent value="login" className="space-y-4">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full border-orange-200"
+                onClick={handleGoogleSignIn}
+                disabled={isLoading}
+              >
+                <Chrome className="w-4 h-4 mr-2" />
+                Continue with Google
+              </Button>
+
+              <div className="flex items-center gap-3">
+                <Separator className="flex-1" />
+                <span className="text-xs text-gray-500">or</span>
+                <Separator className="flex-1" />
+              </div>
+
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="login-email">Email</Label>
@@ -376,6 +531,23 @@ export default function AuthPage() {
               </div>
 
               <form onSubmit={handleSignup} className="space-y-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full border-orange-200"
+                  onClick={handleGoogleSignIn}
+                  disabled={isLoading}
+                >
+                  <Chrome className="w-4 h-4 mr-2" />
+                  Continue with Google
+                </Button>
+
+                <div className="flex items-center gap-3">
+                  <Separator className="flex-1" />
+                  <span className="text-xs text-gray-500">or</span>
+                  <Separator className="flex-1" />
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="signup-name">Full Name *</Label>
                   <div className="relative">
@@ -494,6 +666,16 @@ export default function AuthPage() {
                       </div>
                     </div>
                   </>
+                )}
+
+                {HCAPTCHA_SITE_KEY ? (
+                  <div className="flex justify-center rounded-md border border-orange-100 bg-white p-3">
+                    <div ref={captchaContainerRef} />
+                  </div>
+                ) : (
+                  <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-700">
+                    CAPTCHA is enabled in code. Add VITE_HCAPTCHA_SITE_KEY to .env when CAPTCHA is enabled in Supabase.
+                  </p>
                 )}
 
                 <Button type="submit" className="w-full bg-orange-600 hover:bg-orange-700" disabled={isLoading}>

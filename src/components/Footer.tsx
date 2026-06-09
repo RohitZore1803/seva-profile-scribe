@@ -87,7 +87,7 @@ const Footer = () => {
         </div>
       </div>
       <div className="max-w-5xl mx-auto mt-8 text-center text-xs text-gray-600">
-        <span>© 2024 E-GURUJI.</span>
+        <span>Copyright 2024 E-GURUJI.</span>
       </div>
     </footer>
   );

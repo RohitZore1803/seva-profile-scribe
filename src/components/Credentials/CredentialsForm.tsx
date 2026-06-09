@@ -66,7 +66,7 @@ export default function CredentialsForm({ onSubmit, loading, serviceId }: Props)
   return (
     <div className="bg-white rounded-2xl shadow-xl p-8 border-0">
       <div className="text-center mb-8">
-        <div className="text-4xl mb-3">📅</div>
+        <CalendarIcon className="h-10 w-10 mx-auto mb-3 text-orange-600" />
         <h2 className="text-2xl font-bold text-gray-800 mb-2">Schedule Your Pooja</h2>
         <p className="text-gray-600">Fill in the details to book your sacred ceremony</p>
       </div>

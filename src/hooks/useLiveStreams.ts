@@ -30,10 +30,8 @@ export function useLiveStreams() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      fetchLiveStreams();
-    }
-  }, [user]);
+    fetchLiveStreams();
+  }, []);
 
   const fetchLiveStreams = async () => {
     setLoading(true);
@@ -41,6 +39,7 @@ export function useLiveStreams() {
       const { data, error } = await supabase
         .from('live_streams')
         .select('*')
+        .in('status', ['live', 'scheduled']) // Only fetch active or upcoming streams
         .order('created_at', { ascending: false });
 
       if (error) throw error;

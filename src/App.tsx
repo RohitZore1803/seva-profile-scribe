@@ -25,8 +25,6 @@ import Terms from "./pages/Terms";
 import Policy from "./pages/Policy";
 import EraseMyData from "./pages/EraseMyData";
 import LiveStreams from "./pages/LiveStreams";
-import AstrologyHub from "./pages/AstrologyHub";
-import Loyalty from "./pages/Loyalty";
 
 const queryClient = new QueryClient();
 
@@ -47,8 +45,6 @@ const App = () => (
             <Route path="/dashboard-admin" element={<DashboardAdmin />} />
             <Route path="/services" element={<ServicesPage />} />
             <Route path="/live-streams" element={<LiveStreams />} />
-            <Route path="/astrology" element={<AstrologyHub />} />
-            <Route path="/loyalty" element={<Loyalty />} />
             <Route path="/product/:id" element={<PoojaDetailPage />} />
             <Route path="/credentials/:id" element={<CredentialsPage />} />
             <Route path="/about" element={<About />} />

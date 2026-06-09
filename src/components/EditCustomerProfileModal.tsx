@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +31,7 @@ export default function EditCustomerProfileModal({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (profile && open) {
@@ -88,17 +89,17 @@ export default function EditCustomerProfileModal({
 
     setUploading(true);
     try {
-      const fileExt = profileImage.name.split('.').pop();
-      const fileName = `${profile.id}-${Date.now()}.${fileExt}`;
-      const filePath = `profiles/${fileName}`;
+      const safeName = profileImage.name.replace(/[^a-zA-Z0-9._-]/g, "-");
+      const fileName = `${Date.now()}-${safeName}`;
+      const filePath = `${profile.id}/${fileName}`;
 
       // Delete old image if exists
       if (profile.profile_image_url) {
-        const oldPath = profile.profile_image_url.split('/').pop();
-        if (oldPath) {
+        const oldPath = profile.profile_image_url.split('/avatars/').pop();
+        if (oldPath && oldPath.startsWith(`${profile.id}/`)) {
           await supabase.storage
             .from('avatars')
-            .remove([`profiles/${oldPath}`]);
+            .remove([oldPath]);
         }
       }
 
@@ -183,11 +184,11 @@ export default function EditCustomerProfileModal({
     setLoading(true);
     try {
       // Delete image from storage
-      const imagePath = profile.profile_image_url.split('/').pop();
-      if (imagePath) {
+      const oldPath = profile.profile_image_url.split('/avatars/').pop();
+      if (oldPath && oldPath.startsWith(`${profile.id}/`)) {
         await supabase.storage
           .from('avatars')
-          .remove([`profiles/${imagePath}`]);
+          .remove([oldPath]);
       }
 
       // Update profile to remove image URL
@@ -227,37 +228,42 @@ export default function EditCustomerProfileModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Edit Profile</DialogTitle>
+      <DialogContent className="sm:max-w-lg overflow-hidden border-orange-200 p-0 shadow-2xl">
+        <DialogHeader className="border-b border-orange-100 bg-orange-50 px-6 py-5">
+          <DialogTitle className="text-2xl text-orange-900">Edit Profile</DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5 px-6 pb-6">
           {/* Profile Image Upload */}
           <div className="space-y-2">
-            <Label>Profile Photo</Label>
+            <Label className="text-orange-900">Profile Photo</Label>
             <div className="flex flex-col items-center space-y-4">
-              <Avatar className="w-24 h-24">
+              <Avatar className="w-28 h-28 border-4 border-orange-100">
                 <AvatarImage src={previewUrl || undefined} />
-                <AvatarFallback className="text-2xl">
+                <AvatarFallback className="bg-orange-100 text-3xl font-semibold text-orange-800">
                   {formData.name.charAt(0).toUpperCase() || <Camera className="w-8 h-8" />}
                 </AvatarFallback>
               </Avatar>
               
               <div className="flex gap-2">
-                <Label htmlFor="profile-image" className="cursor-pointer">
-                  <Button type="button" variant="outline" size="sm" className="flex items-center gap-2">
-                    <Upload className="w-4 h-4" />
-                    {previewUrl ? 'Change' : 'Upload'} Photo
-                  </Button>
-                  <Input
-                    id="profile-image"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageSelect}
-                    className="hidden"
-                  />
-                </Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center gap-2 border-orange-200 text-orange-800 hover:bg-orange-50"
+                >
+                  <Upload className="w-4 h-4" />
+                  {previewUrl ? 'Change' : 'Upload'} Photo
+                </Button>
+                <Input
+                  ref={fileInputRef}
+                  id="profile-image"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageSelect}
+                  className="hidden"
+                />
                 
                 {profileImage && (
                   <Button
@@ -265,7 +271,7 @@ export default function EditCustomerProfileModal({
                     variant="outline"
                     size="sm"
                     onClick={removeImage}
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-2 border-orange-200 text-orange-800 hover:bg-orange-50"
                   >
                     <X className="w-4 h-4" />
                     Cancel
@@ -278,7 +284,7 @@ export default function EditCustomerProfileModal({
                     variant="outline"
                     size="sm"
                     onClick={handleDeleteImage}
-                    className="flex items-center gap-2 text-red-600 hover:text-red-700"
+                    className="flex items-center gap-2 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
                   >
                     <X className="w-4 h-4" />
                     Remove
@@ -290,7 +296,7 @@ export default function EditCustomerProfileModal({
 
           {/* Name Field */}
           <div className="space-y-2">
-            <Label htmlFor="name">Full Name</Label>
+            <Label htmlFor="name" className="text-orange-900">Full Name</Label>
             <Input
               id="name"
               type="text"
@@ -298,30 +304,33 @@ export default function EditCustomerProfileModal({
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
               placeholder="Enter your full name"
+              className="border-orange-200 focus-visible:ring-orange-500"
             />
           </div>
 
           {/* Phone Field */}
           <div className="space-y-2">
-            <Label htmlFor="phone">Phone Number</Label>
+            <Label htmlFor="phone" className="text-orange-900">Phone Number</Label>
             <Input
               id="phone"
               type="tel"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               placeholder="Enter your phone number"
+              className="border-orange-200 focus-visible:ring-orange-500"
             />
           </div>
 
           {/* Address Field */}
           <div className="space-y-2">
-            <Label htmlFor="address">Address</Label>
+            <Label htmlFor="address" className="text-orange-900">Address</Label>
             <Input
               id="address"
               type="text"
               value={formData.address}
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               placeholder="Enter your address"
+              className="border-orange-200 focus-visible:ring-orange-500"
             />
           </div>
 
@@ -331,13 +340,13 @@ export default function EditCustomerProfileModal({
               type="button"
               variant="outline"
               onClick={onClose}
-              className="flex-1"
+              className="flex-1 border-orange-200 text-orange-800 hover:bg-orange-50"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="flex-1 flex items-center gap-2"
+              className="flex-1 flex items-center gap-2 bg-orange-700 hover:bg-orange-800"
               disabled={loading || uploading}
             >
               <Save className="w-4 h-4" />

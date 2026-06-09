@@ -11,6 +11,7 @@ import { toast } from "@/hooks/use-toast";
 import DashboardHeader from "@/components/DashboardHeader";
 import DashboardStats from "@/components/DashboardStats";
 import BookingsTable from "@/components/BookingsTable";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 export default function DashboardPandit() {
   const { user, loading: sessionLoading } = useSession();
@@ -26,7 +27,7 @@ export default function DashboardPandit() {
   // Handle authentication state changes
   useEffect(() => {
     if (sessionLoading) return;
-    
+
     if (!user) {
       navigate("/auth?role=pandit", { replace: true });
       return;
@@ -66,20 +67,35 @@ export default function DashboardPandit() {
   // Load bookings when user is confirmed
   useEffect(() => {
     if (sessionLoading || !user || initialLoad) return;
-    
-    const loadLocalBookings = () => {
+
+    const fetchPendingBookings = async () => {
       try {
-        const stored = localStorage.getItem('recentBookings');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          // Show all pending bookings for pandit to accept/reject
-          const pendingBookings = parsed.filter((booking: any) => 
-            booking.status === "pending"
-          );
-          setLocalBookings(pendingBookings);
+        const { data, error } = await supabase
+          .from("bookings")
+          .select(`
+            *,
+            profiles:created_by (*),
+            services:service_id (*)
+          `)
+          .eq("status", "pending")
+          .order("created_at", { ascending: false });
+
+        if (error) {
+          console.error('Error fetching pending bookings:', error);
+          return;
+        }
+
+        if (data) {
+          console.log(`[PanditDashboard] Found ${data.length} pending bookings`);
+          const mapped = data.map((row: any) => ({
+            ...row,
+            customer_profile: row.profiles,
+            service: row.services,
+          }));
+          setLocalBookings(mapped);
         }
       } catch (error) {
-        console.error('Error loading local bookings:', error);
+        console.error('Error loading pending bookings:', error);
       }
     };
 
@@ -114,29 +130,48 @@ export default function DashboardPandit() {
       }
     };
 
-    loadLocalBookings();
+    fetchPendingBookings();
     fetchAssignedBookings();
-    
-    // Set up interval to check for new local bookings
-    const interval = setInterval(loadLocalBookings, 5000);
+
+    // Set up interval to check for new bookings
+    const interval = setInterval(() => {
+      fetchPendingBookings();
+      fetchAssignedBookings();
+    }, 5000); // 5s polling for more real-time response
     return () => clearInterval(interval);
   }, [user, sessionLoading, initialLoad]);
 
   const handleAcceptBooking = async (bookingId: string) => {
     try {
-      // Update booking status in localStorage
-      const stored = localStorage.getItem('recentBookings');
-      if (stored) {
-        const bookings = JSON.parse(stored);
-        const updatedBookings = bookings.map((booking: any) =>
-          booking.id === bookingId
-            ? { ...booking, status: "confirmed", pandit_id: user.id, pandit_name: profile.name }
-            : booking
-        );
-        localStorage.setItem('recentBookings', JSON.stringify(updatedBookings));
-        
-        // Remove from local bookings (pending list)
-        setLocalBookings(prev => prev.filter(b => b.id !== bookingId));
+      const { error } = await supabase
+        .from("bookings")
+        .update({
+          status: "confirmed",
+          pandit_id: user.id,
+          assigned_at: new Date().toISOString()
+        })
+        .eq("id", bookingId)
+        .eq("status", "pending")
+        .is("pandit_id", null);
+
+      if (error) throw error;
+
+      // Update local state
+      setLocalBookings(prev => prev.filter(b => b.id !== bookingId));
+
+      // Refresh assigned bookings to show the new one
+      const { data: newBooking } = await supabase
+        .from("bookings")
+        .select(`*, profiles:created_by (*), services:service_id (*)`)
+        .eq("id", bookingId)
+        .single();
+
+      if (newBooking) {
+        setAssignedBookings(prev => [{
+          ...newBooking,
+          customer_profile: newBooking.profiles,
+          service: newBooking.services,
+        }, ...prev]);
       }
 
       toast({
@@ -155,20 +190,17 @@ export default function DashboardPandit() {
 
   const handleRejectBooking = async (bookingId: string) => {
     try {
-      // Update booking status in localStorage
-      const stored = localStorage.getItem('recentBookings');
-      if (stored) {
-        const bookings = JSON.parse(stored);
-        const updatedBookings = bookings.map((booking: any) =>
-          booking.id === bookingId
-            ? { ...booking, status: "rejected", rejected_by: profile.name }
-            : booking
-        );
-        localStorage.setItem('recentBookings', JSON.stringify(updatedBookings));
-        
-        // Remove from local bookings (pending list)
-        setLocalBookings(prev => prev.filter(b => b.id !== bookingId));
-      }
+      const { error } = await supabase
+        .from("bookings")
+        .update({ status: "cancelled" }) // Standard cancelled status for rejected
+        .eq("id", bookingId)
+        .eq("status", "pending")
+        .is("pandit_id", null);
+
+      if (error) throw error;
+
+      // Remove from local bookings (pending list)
+      setLocalBookings(prev => prev.filter(b => b.id !== bookingId));
 
       toast({
         title: "Success",
@@ -200,10 +232,10 @@ export default function DashboardPandit() {
 
   if (sessionLoading || initialLoad || loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-blue-800">Loading your dashboard...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
+          <p className="text-orange-800">Loading your dashboard...</p>
         </div>
       </div>
     );
@@ -211,9 +243,9 @@ export default function DashboardPandit() {
 
   if (!user || !profile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="text-center text-blue-600">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center">
+        <div className="text-center text-orange-600">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto mb-2"></div>
           <p>Loading profile...</p>
         </div>
       </div>
@@ -229,14 +261,14 @@ export default function DashboardPandit() {
 
   // Show local bookings for pending requests and database bookings for accepted ones
   const allBookings = [...localBookings, ...assignedBookings];
-  const filteredBookings = activeFilter === "all" 
-    ? allBookings 
-    : activeFilter === "pending" 
+  const filteredBookings = activeFilter === "all"
+    ? allBookings
+    : activeFilter === "pending"
       ? localBookings
       : assignedBookings.filter(booking => booking.status === activeFilter);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50">
       <div className="pt-8 px-5 pb-10">
         <DashboardHeader
           title="Pandit Dashboard"
@@ -253,28 +285,29 @@ export default function DashboardPandit() {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Profile Sidebar */}
           <div className="lg:w-64 flex-shrink-0">
-            <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-md p-6 border border-blue-200">
+            <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-md p-6 border border-orange-200">
               <div className="text-center mb-6">
-                <div className="w-20 h-20 bg-blue-100 rounded-full mx-auto mb-3 flex items-center justify-center">
-                  <span className="text-2xl font-bold text-blue-700">
+                <Avatar className="w-20 h-20 mx-auto mb-3">
+                  <AvatarImage src={profile.profile_image_url || undefined} />
+                  <AvatarFallback className="bg-orange-100 text-orange-700 text-2xl font-bold">
                     {profile.name?.charAt(0)?.toUpperCase() || 'P'}
-                  </span>
-                </div>
-                <h3 className="font-semibold text-lg text-blue-800">{profile.name}</h3>
-                <p className="text-sm text-blue-600">Pandit</p>
+                  </AvatarFallback>
+                </Avatar>
+                <h3 className="font-semibold text-lg text-orange-800">{profile.name}</h3>
+                <p className="text-sm text-orange-600">Pandit</p>
                 {profile.expertise && (
                   <div className="mt-2 flex items-center justify-center gap-1">
                     <Star className="w-4 h-4 text-yellow-500" />
-                    <span className="text-xs text-blue-600">{profile.expertise}</span>
+                    <span className="text-xs text-orange-600">{profile.expertise}</span>
                   </div>
                 )}
               </div>
-              
+
               <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
                   <div className="flex items-center gap-2">
-                    <Award className="w-4 h-4 text-blue-600" />
-                    <span className="text-sm font-medium text-blue-800">Verified</span>
+                    <Award className="w-4 h-4 text-orange-600" />
+                    <span className="text-sm font-medium text-orange-800">Verified</span>
                   </div>
                   <span className={`text-xs px-2 py-1 rounded ${
                     profile.is_verified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
@@ -282,13 +315,13 @@ export default function DashboardPandit() {
                     {profile.is_verified ? 'Yes' : 'Pending'}
                   </span>
                 </div>
-                
-                <Button 
-                  onClick={() => setOpenEditModal(true)} 
-                  variant="outline" 
-                  className="w-full flex items-center gap-2 hover:scale-105 transition-transform border-blue-200 text-blue-700 hover:bg-blue-50"
+
+                <Button
+                  onClick={() => setOpenEditModal(true)}
+                  variant="outline"
+                  className="w-full flex items-center gap-2 hover:scale-105 transition-transform border-orange-200 text-orange-700 hover:bg-orange-50"
                 >
-                  <Edit className="w-4 h-4" /> 
+                  <Edit className="w-4 h-4" />
                   Edit Profile
                 </Button>
               </div>
@@ -303,19 +336,19 @@ export default function DashboardPandit() {
               onFilterChange={setActiveFilter}
             />
 
-              <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-md overflow-hidden mb-8 border border-blue-200">
-                <div className="px-6 py-4 border-b bg-blue-50">
-                  <h2 className="text-xl font-semibold text-blue-800">
-                    {activeFilter === "pending" ? "New Booking Requests" : 
-                     activeFilter === "all" ? "All Bookings" : 
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-md overflow-hidden mb-8 border border-orange-200">
+                <div className="px-6 py-4 border-b bg-orange-50">
+                  <h2 className="text-xl font-semibold text-orange-800">
+                    {activeFilter === "pending" ? "New Booking Requests" :
+                     activeFilter === "all" ? "All Bookings" :
                      `${activeFilter.charAt(0).toUpperCase() + activeFilter.slice(1)} Bookings`}
                   </h2>
-                  <p className="text-sm text-blue-600 mt-1">
-                    {activeFilter === "pending" ? "Accept or reject new customer requests" : 
+                  <p className="text-sm text-orange-600 mt-1">
+                    {activeFilter === "pending" ? "Accept or reject new customer requests" :
                      "Manage your bookings and customer requests"}
                   </p>
                 </div>
-                
+
                 <BookingsTable
                   bookings={filteredBookings}
                   loading={false}
@@ -326,10 +359,10 @@ export default function DashboardPandit() {
                 />
               </div>
 
-            <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-md overflow-hidden border border-blue-200">
-              <div className="px-6 py-4 border-b bg-blue-50">
-                <h2 className="text-xl font-semibold text-blue-800">Completed Poojas</h2>
-                <p className="text-sm text-blue-600 mt-1">
+            <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-md overflow-hidden border border-orange-200">
+              <div className="px-6 py-4 border-b bg-orange-50">
+                <h2 className="text-xl font-semibold text-orange-800">Completed Poojas</h2>
+                <p className="text-sm text-orange-600 mt-1">
                   Your completed ceremony history
                 </p>
               </div>

@@ -23,9 +23,6 @@ export default function CredentialsPage() {
   }, [user, sessionLoading, navigate]);
 
   const handleSubmit = async (data: CredentialsFormValues) => {
-    console.log('[Booking DEBUG] Starting booking submission');
-    console.log('[Booking DEBUG] Form data:', data);
-
     if (!user || !user.id) {
       toast({
         title: "Authentication Required",
@@ -53,11 +50,11 @@ export default function CredentialsPage() {
       return;
     }
 
-    // Validate that toDate is after fromDate
-    if (data.toDate <= data.fromDate) {
+    // Allow same-day poojas; only reject ranges where the end date is before the start date.
+    if (data.toDate < data.fromDate) {
       toast({
         title: "Invalid Date Range",
-        description: "To date must be after from date.",
+        description: "To date cannot be before from date.",
         variant: "destructive",
       });
       return;
@@ -83,8 +80,6 @@ export default function CredentialsPage() {
         console.error('[Service lookup error]:', serviceError);
         throw new Error("Service not found");
       }
-
-      console.log('[Booking DEBUG] Creating booking in database');
 
       // Convert time string to 24-hour format for database
       const convertTo24Hour = (timeStr: string) => {
@@ -115,6 +110,7 @@ export default function CredentialsPage() {
         special_requirements: data.specialRequirements || null,
         total_amount: existingService.price,
         status: "pending",
+        payment_status: "pending",
       };
 
       const { data: newBooking, error: bookingError } = await supabase
@@ -128,36 +124,8 @@ export default function CredentialsPage() {
         throw new Error(`Failed to create booking: ${bookingError.message}`);
       }
 
-      console.log('[Booking DEBUG] Booking created successfully:', newBooking);
-
-      // Store in localStorage for cross-dashboard display
-      const bookingDetails = {
-        id: newBooking.id,
-        service_name: existingService.name,
-        service_id: serviceIdAsNumber,
-        customer_name: profile?.name || user.email,
-        customer_email: user.email,
-        from_date: format(data.fromDate, "yyyy-MM-dd"),
-        to_date: format(data.toDate, "yyyy-MM-dd"),
-        preferred_time: data.preferredTime,
-        duration_hours: data.durationHours,
-        location: data.location,
-        address: data.address,
-        phone: data.phone,
-        special_requirements: data.specialRequirements,
-        total_amount: existingService.price,
-        status: "pending",
-        created_at: new Date().toISOString(),
-      };
-
-      // Store in localStorage
-      const existingBookings = JSON.parse(localStorage.getItem('recentBookings') || '[]');
-      existingBookings.unshift(bookingDetails);
-      // Keep only last 10 bookings
-      localStorage.setItem('recentBookings', JSON.stringify(existingBookings.slice(0, 10)));
-
       toast({
-        title: "🎉 Booking Confirmed Successfully!",
+        title: "Booking Request Submitted",
         description: (
           <div className="text-left space-y-2">
             <div><strong>Service:</strong> {existingService.name}</div>
@@ -166,7 +134,7 @@ export default function CredentialsPage() {
             <div><strong>Duration:</strong> {data.durationHours} hours</div>
             <div><strong>Location:</strong> {data.location}</div>
             <div className="text-sm text-green-600 mt-2">
-              📧 Confirmation details sent to your email
+              Your request is now visible to available pandits.
             </div>
           </div>
         ),
