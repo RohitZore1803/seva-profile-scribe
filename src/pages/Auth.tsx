@@ -33,6 +33,7 @@ declare global {
 }
 
 const HCAPTCHA_SITE_KEY = import.meta.env.VITE_HCAPTCHA_SITE_KEY as string | undefined;
+const AUTH_REDIRECT_URL = import.meta.env.VITE_AUTH_REDIRECT_URL as string | undefined;
 
 export default function AuthPage() {
   const navigate = useNavigate();
@@ -199,7 +200,7 @@ export default function AuthPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth`,
+          redirectTo: AUTH_REDIRECT_URL || `${window.location.origin}/auth`,
           queryParams: {
             prompt: "select_account",
           },
